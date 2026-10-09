@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SIM: Qualitative Regression Models</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=IBM+Plex+Sans:wght@400;500;600&family=STIX+Two+Text:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F6F7F5; --panel:#FFFFFF; --ink:#1D2B3A; --ink-2:#4A5868; --rule:#D9DEE3; --soft:#EEF1F3;
+  --probit:#2F55D4; --logit:#0E8C78; --lpm:#B7791F; --good:#2E7D4F; --bad:#B83A3A;
+  --good-bg:#E7F3EC; --bad-bg:#F8E9E9; --hl:#FFF4D6;
+  --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --math:"STIX Two Text", "Cambria Math", "Times New Roman", serif;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#141A21; --panel:#1B232C; --ink:#E4E9EE; --ink-2:#A7B3BF; --rule:#2E3A46; --soft:#222C36;
+    --probit:#7D9BFF; --logit:#3CC7AD; --lpm:#E3AE52; --good:#5FC48A; --bad:#EE7A7A;
+    --good-bg:#1D3326; --bad-bg:#3A2222; --hl:#3A3220;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141A21; --panel:#1B232C; --ink:#E4E9EE; --ink-2:#A7B3BF; --rule:#2E3A46; --soft:#222C36;
+  --probit:#7D9BFF; --logit:#3CC7AD; --lpm:#E3AE52; --good:#5FC48A; --bad:#EE7A7A;
+  --good-bg:#1D3326; --bad-bg:#3A2222; --hl:#3A3220;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);font-size:18px;line-height:1.6;min-height:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--probit);outline-offset:2px}
+main:focus,main:focus-visible{outline:none}
+img,svg{max-width:100%}
+
+.shell{display:grid;grid-template-columns:290px 1fr;min-height:100vh}
+nav.side{border-right:1px solid var(--rule);padding:28px 20px;position:sticky;top:env(safe-area-inset-top,0px);height:100vh;overflow-y:auto;font-family:var(--sans);font-size:15px;background:var(--panel)}
+.brand{font-family:var(--serif);font-weight:700;font-size:22px;line-height:1.2;margin:0 0 4px}
+.brand-sub{color:var(--ink-2);font-size:13px;margin:0 0 22px}
+.overall{margin:0 0 22px}
+.overall .bar{height:6px;background:var(--soft);border-radius:3px;overflow:hidden}
+.overall .bar i{display:block;height:100%;background:var(--good);width:0;transition:width .4s}
+.overall small{color:var(--ink-2);display:block;margin-top:6px}
+.mod-list{list-style:none;margin:0;padding:0}
+.mod-list li{margin:0}
+.mod-list button{all:unset;cursor:pointer;display:grid;grid-template-columns:28px 1fr;gap:8px;padding:9px 8px;border-radius:6px;width:100%;box-sizing:border-box}
+.mod-list button:hover{background:var(--soft)}
+.mod-list button[aria-current="true"]{background:var(--soft);font-weight:600}
+.mod-list button:focus-visible{outline:3px solid var(--probit)}
+.mod-list .n{font-variant-numeric:tabular-nums;color:var(--ink-2);text-align:right}
+.mod-list .meta{display:block;font-size:12.5px;color:var(--ink-2);font-weight:400}
+.mod-list .done .n{color:var(--good)}
+.side-tools{margin-top:22px;border-top:1px solid var(--rule);padding-top:16px;display:flex;flex-direction:column;gap:8px}
+.linkbtn{all:unset;cursor:pointer;color:var(--ink-2);font-size:14px}
+.linkbtn:hover{color:var(--ink);text-decoration:underline}
+
+main{padding:40px clamp(18px,5vw,64px) 120px;max-width:900px;width:100%}
+.mtop{display:none}
+h1,h2,h3{font-family:var(--serif);line-height:1.2;margin:0}
+h1{font-size:clamp(32px,5vw,46px);font-weight:700;letter-spacing:-.01em;margin-bottom:12px}
+h2{font-size:28px;margin:44px 0 12px}
+h3{font-size:21px;margin:30px 0 8px}
+p{margin:0 0 14px;max-width:68ch}
+.lede{font-size:20px;color:var(--ink-2);max-width:60ch}
+.modhead{border-bottom:1px solid var(--rule);padding-bottom:18px;margin-bottom:8px}
+.modhead .kicker{font-family:var(--sans);font-size:14px;color:var(--ink-2);margin-bottom:6px}
+ul.plain{margin:0 0 14px;padding-left:22px;max-width:66ch}
+ul.plain li{margin-bottom:6px}
+.m{font-family:var(--math);font-style:italic;white-space:nowrap}
+.mu{font-family:var(--math)}
+.eq{font-family:var(--math);font-size:20px;background:var(--panel);border-left:3px solid var(--probit);padding:12px 18px;margin:12px 0 18px;overflow-x:auto;white-space:nowrap}
+.eq.lpm{border-color:var(--lpm)} .eq.logit{border-color:var(--logit)}
+.note{background:var(--hl);padding:12px 16px;border-radius:6px;margin:12px 0 18px;font-size:16.5px;max-width:68ch}
+.work{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:14px 18px;margin:12px 0 20px;font-size:17px}
+.work .step{font-family:var(--math);display:block;overflow-x:auto;white-space:nowrap}
+pre.stata{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:14px;overflow-x:auto;margin:10px 0 18px}
+.tbl-wrap{overflow-x:auto;margin:12px 0 20px;border:1px solid var(--rule);border-radius:8px;background:var(--panel)}
+table{border-collapse:collapse;font-family:var(--sans);font-size:14px;width:100%}
+th,td{padding:7px 10px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}
+th{font-weight:600;background:var(--soft)}
+td.num{text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.cell{cursor:pointer}
+td.cell:hover,td.cell.sel{background:var(--hl)}
+.sp-key{font-family:var(--sans);font-size:13px;color:var(--ink-2)}
+
+/* widgets */
+.widget{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:18px;margin:18px 0 26px;font-family:var(--sans);font-size:15px}
+.widget h4{font-family:var(--serif);font-size:19px;margin:0 0 4px}
+.widget .wsub{color:var(--ink-2);margin:0 0 12px;font-size:14px}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 20px;margin-bottom:12px}
+.ctl label{display:flex;justify-content:space-between;font-size:14px;color:var(--ink-2)}
+.ctl label b{color:var(--ink);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--probit)}
+.readout{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.chip{border:1px solid var(--rule);border-radius:6px;padding:6px 10px;font-variant-numeric:tabular-nums;background:var(--paper)}
+.chip b{font-weight:600}
+.chip.warn{border-color:var(--bad);color:var(--bad)}
+.sw{display:inline-block;width:12px;height:3px;vertical-align:middle;margin-right:6px;border-radius:2px}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden;margin-bottom:12px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:6px 12px;cursor:pointer;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.chart{width:100%;height:auto;display:block}
+.chart text{font-family:var(--sans);font-size:11px;fill:var(--ink-2)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--ink-2);margin-top:6px}
+
+/* questions */
+.qset{margin-top:40px}
+.qset-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;border-top:2px solid var(--ink);padding-top:14px}
+.qset-head h2{margin:0}
+.qset-head .score{font-family:var(--sans);font-size:14px;color:var(--ink-2)}
+.filter{font-family:var(--sans);font-size:14px;margin:12px 0 4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.q{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:18px 20px;margin:16px 0}
+.q.ok{border-color:var(--good)} .q.no{border-color:var(--bad)}
+.qmeta{font-family:var(--sans);font-size:13px;color:var(--ink-2);display:flex;gap:10px;margin-bottom:6px}
+.tag{border-radius:4px;padding:1px 7px;font-weight:500}
+.tag.T{background:color-mix(in srgb,var(--probit) 14%,transparent);color:var(--probit)}
+.tag.A{background:color-mix(in srgb,var(--logit) 16%,transparent);color:var(--logit)}
+.q .prompt{margin-bottom:12px}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{all:unset;cursor:pointer;border:1px solid var(--rule);border-radius:7px;padding:10px 14px;font-size:16.5px;line-height:1.45;background:var(--paper)}
+.opt:hover{border-color:var(--ink-2)}
+.opt:focus-visible{outline:3px solid var(--probit)}
+.opt.right{background:var(--good-bg);border-color:var(--good)}
+.opt.wrong{background:var(--bad-bg);border-color:var(--bad)}
+.opt[disabled]{cursor:default}
+.numrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.numrow input,.q textarea{border:1px solid var(--rule);border-radius:7px;padding:9px 12px;background:var(--paper);font-family:var(--sans);font-size:16px}
+.numrow input{width:160px}
+.q textarea{width:100%;min-height:90px;resize:vertical}
+.btn{border:1px solid var(--ink);background:var(--ink);color:var(--paper);border-radius:7px;padding:8px 14px;cursor:pointer;font-family:var(--sans);font-size:14.5px;font-weight:500}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn:disabled{opacity:.5;cursor:default}
+.fb{margin-top:12px;padding:12px 14px;border-radius:7px;font-size:16px;display:none}
+.fb.show{display:block}
+.fb.ok{background:var(--good-bg)} .fb.no{background:var(--bad-bg)} .fb.info{background:var(--soft)}
+.fb strong{font-family:var(--sans)}
+.hintbox{margin-top:8px;font-size:15.5px;color:var(--ink-2);display:none}
+.hintbox.show{display:block}
+.qactions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.selfgrade{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;font-family:var(--sans);font-size:14px;align-items:center}
+
+.notes{margin-top:44px}
+.notes textarea{width:100%;min-height:120px;border:1px solid var(--rule);border-radius:8px;padding:12px;background:var(--panel);font-family:var(--sans);font-size:15px}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.home-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:20px 0}
+.mcard{all:unset;cursor:pointer;border:1px solid var(--rule);border-radius:10px;padding:14px 16px;background:var(--panel);font-family:var(--sans);font-size:14.5px;display:block}
+.mcard:hover{border-color:var(--ink-2)}
+.mcard:focus-visible{outline:3px solid var(--probit)}
+.mcard b{font-family:var(--serif);font-size:18px;display:block;margin:2px 0 4px}
+.mcard .bar{height:4px;background:var(--soft);border-radius:2px;margin-top:10px;overflow:hidden}
+.mcard .bar i{display:block;height:100%;background:var(--good)}
+.mcard small{color:var(--ink-2)}
+.hero-chart{background:var(--panel);border:1px solid var(--rule);border-radius:12px;padding:16px;margin:22px 0}
+.plan{counter-reset:s;list-style:none;padding:0;margin:0 0 14px;max-width:66ch}
+.plan li{counter-increment:s;padding-left:34px;position:relative;margin-bottom:8px}
+.plan li::before{content:counter(s);position:absolute;left:0;top:2px;width:24px;height:24px;border-radius:50%;background:var(--soft);font-family:var(--sans);font-size:13px;text-align:center;line-height:24px}
+
+.drawer{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:50}
+.drawer.open{display:block}
+.drawer .panel{position:absolute;right:0;top:0;bottom:0;width:min(520px,100%);background:var(--panel);padding:calc(24px + env(safe-area-inset-top,0px)) 24px calc(24px + env(safe-area-inset-bottom,0px));overflow-y:auto;font-size:16px}
+.drawer h2{margin-top:0;font-size:24px}
+.drawer h3{font-size:18px;margin-top:20px}
+.close{float:right}
+.result-banner{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:18px;margin:20px 0;font-family:var(--sans)}
+.result-banner .big{font-family:var(--serif);font-size:40px;font-weight:700;line-height:1}
+
+.box{border-radius:8px;padding:14px 18px;margin:18px 0;background:var(--panel);border:1px solid var(--rule);border-left-width:4px;max-width:72ch}
+.box h3{margin:0 0 6px;font-size:18px}
+.box ul.plain,.box ol{margin-bottom:0}
+.box ol{padding-left:22px}.box ol li{margin-bottom:5px}
+.box.outcomes{border-left-color:var(--probit)}
+.box.think{border-left-color:var(--lpm)}
+.box.act{border-left-color:var(--logit);max-width:none;margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0}
+.box.act + .widget{margin-top:0;border-top-left-radius:0;border-top-right-radius:0;border-top:0}
+.box.keys{border-left-color:var(--good)}
+dl.gloss dt{font-weight:600;margin-top:10px}
+dl.gloss dd{margin:2px 0 0}
+.psec{margin-top:40px}
+.ptitle{font-size:30px;border-top:2px solid var(--ink);padding-top:14px}
+.pq{margin:14px 0;break-inside:avoid}
+.popts{list-style:none;padding-left:22px;margin:4px 0}
+.pline{border-bottom:1px solid var(--rule);height:28px;max-width:60ch}
+.akey li{margin-bottom:8px;font-size:16px}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 16px;margin:10px 0}
+.fld label{display:block;font-family:var(--sans);font-size:14px;color:var(--ink-2);margin-bottom:4px}
+.fld input{width:100%;border:1px solid var(--rule);border-radius:7px;padding:9px 12px;background:var(--paper);font-family:var(--sans);font-size:16px}
+.fld input:disabled{opacity:.7}
+.cert{border:2px solid var(--ink);outline:1px solid var(--ink);outline-offset:-8px;border-radius:4px;padding:40px 32px;text-align:center;background:var(--panel);margin:16px 0}
+.cert-k{font-family:var(--sans);font-size:14px;color:var(--ink-2)}
+.cert-t{font-size:30px;font-weight:700;margin:6px 0 18px}
+.cert-n{font-size:34px;font-style:italic;margin:6px 0;border-bottom:1px solid var(--rule);display:inline-block;padding:0 24px 4px}
+.cert-p{max-width:none;margin:6px auto;font-size:17px}
+.cert-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:22px 0;font-family:var(--sans)}
+.cert-grid b{display:block;font-size:20px}
+.cert-grid span{font-size:13px;color:var(--ink-2)}
+.cert-code{font-family:var(--sans);font-size:15px;margin-top:14px}
+@media print{
+  body.print-cert main > *:not(#cert){display:none!important}
+  body.print-cert #cert{display:block!important;margin-top:40px}
+  nav.side,.mtop,.noprint,.drawer{display:none!important}
+  .shell{display:block}
+  main{max-width:none;padding:0}
+  body{background:#fff;color:#000;font-size:12pt}
+  .psec{break-before:page}
+  .box,.eq,pre.stata,.tbl-wrap{break-inside:avoid}
+}
+@media (max-width:860px){
+  .shell{grid-template-columns:1fr}
+  nav.side{position:fixed;inset:0 auto 0 0;width:86%;max-width:330px;z-index:40;transform:translateX(-105%);transition:transform .25s;height:100%;padding-top:calc(24px + env(safe-area-inset-top,0px))}
+  nav.side.open{transform:none;box-shadow:0 0 0 100vmax rgba(0,0,0,.35)}
+  .mtop{display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--paper);border-bottom:1px solid var(--rule);padding:10px 16px;z-index:30;font-family:var(--sans);font-size:14px}
+  main{padding-top:20px}
+  body{font-size:17px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="mtop">
+  <button class="btn ghost" id="menuBtn" aria-controls="side" aria-expanded="false">Modules</button>
+  <span id="mtopTitle"></span>
+</div>
+<div class="shell">
+  <nav class="side" id="side" aria-label="Modules">
+    <p class="brand">Qualitative regression models</p>
+    <p class="brand-sub">Self-Instructional Material · 3 hours</p>
+    <div class="overall">
+      <div class="bar"><i id="overallBar"></i></div>
+      <small id="overallTxt"></small>
+      <div class="bar" style="margin-top:12px"><i id="timeBar" style="background:var(--probit)"></i></div>
+      <small id="timeTxt"></small>
+    </div>
+    <ul class="mod-list" id="modList"></ul>
+    <div class="side-tools">
+      <button class="linkbtn" data-open="formulas">Formula sheet</button>
+      <button class="linkbtn" data-open="gloss">Glossary</button>
+      <button class="linkbtn" data-open="phi">Φ and logistic calculator</button>
+      <button class="linkbtn" id="themeBtn">Switch light/dark</button>
+      <button class="linkbtn" id="resetBtn">Reset all progress</button>
+    </div>
+  </nav>
+  <main id="main" tabindex="-1"></main>
+</div>
+
+<div class="drawer" id="drawer-formulas" role="dialog" aria-modal="true" aria-labelledby="fh">
+  <div class="panel">
+    <button class="btn ghost close" data-close>Close</button>
+    <h2 id="fh">Formula sheet</h2>
+    <h3>Binary Y</h3>
+    <div class="eq">E(Y | X) = 1·Pr(Y=1|X) + 0·Pr(Y=0|X) = Pr(Y=1|X)</div>
+    <h3>Linear probability model</h3>
+    <div class="eq lpm">Pr(Y=1|X) = β<sub>0</sub> + β<sub>1</sub>X</div>
+    <p>β<sub>1</sub> = change in probability for a unit change in X. Use heteroskedasticity-robust SEs.</p>
+    <h3>Probit</h3>
+    <div class="eq">Pr(Y=1|X) = Φ(β<sub>0</sub> + β<sub>1</sub>X), &nbsp; Φ = standard normal CDF</div>
+    <p>β<sub>1</sub> = change in the z-index for a unit change in X.</p>
+    <h3>Logit</h3>
+    <div class="eq logit">Pr(Y=1|X) = F(β<sub>0</sub> + β<sub>1</sub>X) = 1 / (1 + e<sup>−(β<sub>0</sub>+β<sub>1</sub>X)</sup>)</div>
+    <h3>Effect of a change in X (probit/logit)</h3>
+    <div class="eq">ΔP = G(β<sub>0</sub>+β<sub>1</sub>(X+ΔX)) − G(β<sub>0</sub>+β<sub>1</sub>X), &nbsp; G = Φ or F</div>
+    <h3>Measures of fit</h3>
+    <p>Fraction correctly predicted: share of observations with p̂ &gt; 0.5 when Y=1, or p̂ &lt; 0.5 when Y=0.</p>
+    <div class="eq">pseudo-R² = 1 − ln(f<sub>max</sub>) / ln(f<sub>0</sub>)</div>
+    <p>f<sub>max</sub> = maximised likelihood with the X's; f<sub>0</sub> = likelihood with only an intercept.</p>
+    <h3>Useful Φ values</h3>
+    <div class="tbl-wrap"><table>
+      <tr><th>z</th><td class="num">−2.0</td><td class="num">−1.5</td><td class="num">−1.3</td><td class="num">−1.0</td><td class="num">−0.8</td><td class="num">−0.5</td><td class="num">0</td><td class="num">0.5</td><td class="num">1.0</td></tr>
+      <tr><th>Φ(z)</th><td class="num">.0228</td><td class="num">.0668</td><td class="num">.0968</td><td class="num">.1587</td><td class="num">.2119</td><td class="num">.3085</td><td class="num">.5000</td><td class="num">.6915</td><td class="num">.8413</td></tr>
+    </table></div>
+  </div>
+</div>
+
+<div class="drawer" id="drawer-gloss" role="dialog" aria-modal="true" aria-labelledby="gh">
+  <div class="panel"><button class="btn ghost close" data-close>Close</button><h2 id="gh">Glossary</h2><div id="glossBody"></div></div>
+</div>
+
+<div class="drawer" id="drawer-phi" role="dialog" aria-modal="true" aria-labelledby="ph">
+  <div class="panel">
+    <button class="btn ghost close" data-close>Close</button>
+    <h2 id="ph">Φ and logistic calculator</h2>
+    <p>Type a z-index, or build one from coefficients. Use this whenever a question needs Φ(z) or F(z).</p>
+    <div class="widget" style="margin-top:8px">
+      <div class="controls">
+        <div class="ctl"><label for="cz">z-index</label><input id="cz" type="number" step="0.01" value="-0.8" class="calcin"></div>
+      </div>
+      <div class="readout" id="calcOut"></div>
+      <h4 style="margin-top:18px">Build z from coefficients</h4>
+      <p class="wsub">z = b0 + b1·x1 + b2·x2</p>
+      <div class="controls">
+        <div class="ctl"><label for="cb0">b0</label><input id="cb0" type="number" step="any" value="-2.258738" class="calcin"></div>
+        <div class="ctl"><label for="cb1">b1</label><input id="cb1" type="number" step="any" value="2.741637" class="calcin"></div>
+        <div class="ctl"><label for="cx1">x1</label><input id="cx1" type="number" step="any" value="0.3" class="calcin"></div>
+        <div class="ctl"><label for="cb2">b2</label><input id="cb2" type="number" step="any" value="0.7081579" class="calcin"></div>
+        <div class="ctl"><label for="cx2">x2</label><input id="cx2" type="number" step="any" value="0" class="calcin"></div>
+      </div>
+      <button class="btn" id="useZ">Use this z above</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- math helpers ---------- */
+function erf(x){const s=x<0?-1:1;x=Math.abs(x);const t=1/(1+0.3275911*x);
+  const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return s*y;}
+const Phi=z=>0.5*(1+erf(z/Math.SQRT2));
+const phi=z=>Math.exp(-z*z/2)/Math.sqrt(2*Math.PI);
+const Lgt=z=>1/(1+Math.exp(-z));
+const f3=x=>(Math.round(x*1000)/1000).toFixed(3);
+const f4=x=>(Math.round(x*10000)/10000).toFixed(4);
+const pp=x=>(x*100).toFixed(1)+" pp";
+
+/* ---------- storage ---------- */
+const KEY="qrm-sim-v2";
+let S={answers:{},notes:{},open:{},last:"home",time:{}};
+try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+/* ---------- content ---------- */
+const BANK=[
+{id:"m1",title:"Why binary Y is different",mins:15,
+content:`
+<p class="lede">So far the dependent variable has been continuous: a district's average test score, a state's traffic fatality rate. Many questions economists care about have a yes/no answer instead.</p>
+<h3>Binary outcomes are everywhere</h3>
+<ul class="plain">
+<li><b>College admission:</b> Y = admitted or not; X = high-school grades, SAT scores, demographics.</li>
+<li><b>Smoking:</b> Y = smokes or not; X = cigarette tax rate, income, demographics.</li>
+<li><b>Mortgage approval:</b> Y = application denied or not; X = race, income, house characteristics, marital status.</li>
+</ul>
+<p>When Y takes only the values 0 and 1, its conditional mean has a special meaning. Because Y is 1 with probability Pr(Y=1|X) and 0 otherwise:</p>
+<div class="eq">E(Y | X) = 1 × Pr(Y=1|X) + 0 × Pr(Y=0|X) = Pr(Y=1|X)</div>
+<p>So <b>a regression of a binary Y is a model of a probability</b>. Everything in this SIM follows from that one line: the predicted value is a predicted probability, and the "effect" of X is a change in that probability.</p>
+<h3>The running example: the Boston Fed HMDA data</h3>
+<p>The Home Mortgage Disclosure Act (HMDA) data contain individual applications for single-family mortgages made in 1990 in the greater Boston area, with 2,380 observations.</p>
+<ul class="plain">
+<li><b>Dependent variable:</b> <span class="mu">deny</span> = 1 if the mortgage application was denied, 0 if accepted. Its sample mean is 0.120.</li>
+<li><b>Regressors:</b> income, wealth, employment status; other loan and property characteristics; race of the applicant.</li>
+</ul>
+<p>The central question: if two otherwise identical applicants, one white and one black, applied for a home loan, is there a difference in their probability of denial?</p>
+<div class="note">The key financial regressor throughout is the <b>P/I ratio</b>: total monthly debt payments divided by total monthly income. A P/I ratio of 0.3 means 30% of income goes to debt payments.</div>
+`,
+questions:[
+{id:"m1q1",k:"T",type:"mc",q:"When Y is binary (0 or 1), what does the population regression function E(Y|X) equal?",
+ opts:["The average value of X among those with Y = 1","Pr(Y = 1 | X)","Pr(Y = 0 | X)","Always 0.5, since Y has two values"],a:1,
+ ex:"E(Y|X) = 1·Pr(Y=1|X) + 0·Pr(Y=0|X) = Pr(Y=1|X). The conditional mean of a 0/1 variable is the probability that it equals 1."},
+{id:"m1q2",k:"T",type:"mc",q:"Which of these dependent variables is binary?",
+ opts:["Number of cigarettes smoked per day","Household income in dollars","Whether a worker is a union member","An applicant's SAT score"],a:2,
+ ex:"Union membership is yes/no. The others take many values (counts or continuous values)."},
+{id:"m1q3",k:"A",type:"num",q:"In the HMDA sample, the mean of <span class='mu'>deny</span> is 0.120 and n = 2,380. About how many applications were denied?",
+ ans:285.6,tol:3,hint:"The mean of a 0/1 variable is the share of 1s.",
+ ex:"0.120 × 2,380 ≈ 286 denials. The sample mean of a binary variable is the fraction of observations equal to 1."},
+{id:"m1q4",k:"T",type:"mc",q:"The sample mean of <span class='mu'>black</span> in the HMDA data is 0.142. What does it tell you?",
+ opts:["The average applicant is 14.2% black","14.2% of applicants in the sample are black","Black applicants are denied 14.2% of the time","The coefficient on black is 0.142"],a:1,
+ ex:"For any 0/1 indicator, the sample mean is the fraction of observations in the category, here 14.2% of the 2,380 applicants."},
+{id:"m1q5",k:"T",type:"open",q:"In your own words: why does knowing that E(Y|X) = Pr(Y=1|X) change how we should interpret a regression with a binary dependent variable? Then give one example of a binary outcome from your own field with two plausible regressors.",
+ model:"Because the conditional mean is a probability, the fitted value of the regression is a predicted probability that Y = 1, and a slope coefficient measures how that probability changes with X. This also means sensible models must keep predictions between 0 and 1. Example: Y = 1 if a firm exports; X = firm size, labour productivity."}
+]},
+
+{id:"m2",title:"The linear probability model",mins:30,
+content:`
+<p class="lede">The natural first try is the ordinary linear regression you already know, applied to a 0/1 outcome.</p>
+<div class="eq lpm">Y<sub>i</sub> = β<sub>0</sub> + β<sub>1</sub>X<sub>i</sub> + u<sub>i</sub></div>
+<p>But what does the line β<sub>0</sub> + β<sub>1</sub>X mean when Y is only ever 0 or 1? Under least-squares assumption #1, E(u<sub>i</sub>|X<sub>i</sub>) = 0, so</p>
+<div class="work">
+<span class="step">E(Y<sub>i</sub>|X<sub>i</sub>) = E(β<sub>0</sub> + β<sub>1</sub>X<sub>i</sub> + u<sub>i</sub> | X<sub>i</sub>) = β<sub>0</sub> + β<sub>1</sub>X<sub>i</sub></span>
+<span class="step">and since E(Y|X) = Pr(Y=1|X):&nbsp;&nbsp; Pr(Y=1|X) = β<sub>0</sub> + β<sub>1</sub>X</span>
+</div>
+<p>That is why this is called the <b>linear probability model (LPM)</b>:</p>
+<ul class="plain">
+<li>The predicted value Ŷ is the <b>predicted probability</b> that Y<sub>i</sub> = 1, given X.</li>
+<li>β<sub>1</sub> is the <b>change in the probability</b> that Y = 1 associated with a unit change in X: β<sub>1</sub> = ΔPr(Y=1|X)/ΔX.</li>
+</ul>
+
+<h3>Worked example: denial and the P/I ratio</h3>
+<p>Estimated by OLS on the full HMDA data (robust standard errors in parentheses):</p>
+<div class="eq lpm">denŷ = −0.080 + 0.604 P/I ratio &nbsp;&nbsp; (0.032) &nbsp; (0.098), &nbsp; n = 2,380</div>
+<div class="work">
+<span class="step">Predicted probability at P/I = 0.3: −0.080 + 0.604 × 0.3 = 0.101</span>
+<span class="step">Predicted probability at P/I = 0.4: −0.080 + 0.604 × 0.4 = 0.162</span>
+<span class="step">Effect of raising P/I from 0.3 to 0.4: 0.604 × 0.1 = 0.061, i.e. 6.1 percentage points</span>
+</div>
+<div class="note">Some printed versions of these slides show 0.151 and 0.212 for the two predicted values. The arithmetic gives 0.101 and 0.162; the difference (0.061) is the same either way. Use the arithmetic.</div>
+
+<h3>Adding race as a regressor</h3>
+<div class="eq lpm">denŷ = −0.091 + 0.559 P/I ratio + 0.177 black &nbsp;&nbsp; (0.032) (0.098) (0.025)</div>
+<div class="work">
+<span class="step">Black applicant, P/I = 0.3: −0.091 + 0.559 × 0.3 + 0.177 × 1 = 0.254</span>
+<span class="step">White applicant, P/I = 0.3: −0.091 + 0.559 × 0.3 + 0.177 × 0 = 0.077</span>
+<span class="step">Difference = 0.177 = 17.7 percentage points (t = 0.177/0.025 ≈ 7.1, significant at 5%)</span>
+</div>
+
+<div data-widget="lpm"></div>
+
+<h3>LPM: strengths and weaknesses</h3>
+<p><b>Advantages.</b> It is simple to estimate and to interpret, and inference works exactly as in multiple regression, provided you use heteroskedasticity-robust standard errors. (The errors are always heteroskedastic: Var(u|X) = p(1−p) where p = β<sub>0</sub>+β<sub>1</sub>X, which changes with X.)</p>
+<p><b>Disadvantages.</b></p>
+<ul class="plain">
+<li>The LPM says the change in the predicted probability for a given change in X is the same for every value of X. In the HMDA example, moving P/I from 0.1 to 0.2 is predicted to raise denial probability by exactly as much as moving from 0.7 to 0.8, which doesn't make sense.</li>
+<li>Predicted probabilities can be below 0 or above 1. Try P/I = 2 in the widget above.</li>
+</ul>
+<p>Both problems are solved by a <b>nonlinear</b> probability model: probit or logit.</p>
+`,
+questions:[
+{id:"m2q1",k:"T",type:"mc",q:"In the linear probability model Y = β₀ + β₁X + u, how is β₁ interpreted?",
+ opts:["The change in the odds that Y = 1 for a unit change in X","The change in the probability that Y = 1 for a unit change in X","The change in the z-index for a unit change in X","The probability that Y = 1 when X = 0"],a:1,
+ ex:"Because Pr(Y=1|X) = β₀ + β₁X in the LPM, β₁ is the change in that probability per unit of X."},
+{id:"m2q2",k:"A",type:"num",q:"Using denŷ = −0.080 + 0.604 P/I, what is the predicted probability of denial for an applicant with P/I = 0.25? (Give a decimal, e.g. 0.123.)",
+ ans:0.071,tol:0.002,hint:"Plug 0.25 in for P/I.",
+ ex:"−0.080 + 0.604 × 0.25 = −0.080 + 0.151 = 0.071, a 7.1% predicted denial probability."},
+{id:"m2q3",k:"A",type:"num",q:"Using the same LPM, by how many <b>percentage points</b> does the predicted denial probability rise when P/I increases from 0.30 to 0.45?",
+ ans:9.06,tol:0.15,unit:"pp",hint:"In the LPM the effect is β₁ × ΔX, regardless of where you start.",
+ ex:"0.604 × 0.15 = 0.0906, about 9.1 percentage points. In the LPM the starting point doesn't matter."},
+{id:"m2q4",k:"A",type:"num",q:"Using denŷ = −0.091 + 0.559 P/I + 0.177 black, what is the predicted denial probability for a black applicant with P/I = 0.5?",
+ ans:0.3655,tol:0.003,
+ ex:"−0.091 + 0.559 × 0.5 + 0.177 = −0.091 + 0.2795 + 0.177 = 0.3655, about 36.6%."},
+{id:"m2q5",k:"A",type:"num",q:"In denŷ = −0.080 + 0.604 P/I, below what value of the P/I ratio does the LPM predict a <b>negative</b> probability of denial?",
+ ans:0.1325,tol:0.003,hint:"Set the predicted value equal to 0 and solve for P/I.",
+ ex:"0 = −0.080 + 0.604 P/I gives P/I = 0.080/0.604 ≈ 0.132. Any applicant with a lower P/I ratio gets a negative predicted probability, which is impossible."},
+{id:"m2q6",k:"T",type:"mc",q:"Why must you use heteroskedasticity-robust standard errors in the LPM?",
+ opts:["Because the errors are normally distributed","Because Var(u|X) = p(1 − p) with p = β₀ + β₁X, which varies with X","Because the LPM is estimated by maximum likelihood","Because the regressors are binary"],a:1,
+ ex:"Given X, Y is Bernoulli with success probability p(X), so Var(u|X) = p(X)[1 − p(X)]. That changes with X, so errors are heteroskedastic by construction."},
+{id:"m2q7",k:"T",type:"mc",q:"Which statement is a genuine weakness of the LPM?",
+ opts:["It cannot be estimated by OLS","Its coefficients have no probability interpretation","It forces the effect of a change in X on Pr(Y=1) to be the same at every value of X","It cannot include more than one regressor"],a:2,
+ ex:"A linear function has a constant slope, so the LPM imposes the same probability change for a given ΔX everywhere, plus it can predict probabilities outside [0, 1]."},
+{id:"m2q8",k:"A",type:"mc",q:"An LPM for smoking gives smokê = 0.45 − 0.08 tax, where tax is the cigarette tax in dollars per pack. What does it predict for a state with a $7 tax?",
+ opts:["A probability of −0.11, which is impossible and shows a limitation of the LPM","A probability of 0.11","A probability of 0.45 − 0.08 = 0.37","The model can't be evaluated at that value"],a:0,
+ ex:"0.45 − 0.08 × 7 = −0.11. A linear model eventually crosses 0 (or 1); probit and logit never do."},
+{id:"m2q9",k:"T",type:"open",q:"Explain, using the HMDA example, why a constant effect of the P/I ratio on denial probability is implausible.",
+ model:"Applicants with very low P/I ratios (say 0.1 to 0.2) are almost never denied, so a small rise in P/I barely changes their already-tiny denial probability. Around moderate-to-high P/I ratios, lenders become concerned and the same rise could change denial probability a lot. At very high P/I the probability is already near 1, so it cannot rise much more. That pattern is S-shaped, not linear."}
+]},
+
+{id:"m3",title:"Probit regression",mins:35,
+content:`
+<p class="lede">We want a model in which Pr(Y=1|X) rises with X when β<sub>1</sub> &gt; 0 and stays between 0 and 1 for every X. That requires a nonlinear, S-shaped function.</p>
+<p>Probit uses the cumulative standard normal distribution function Φ(z):</p>
+<div class="eq">Pr(Y=1|X) = Φ(β<sub>0</sub> + β<sub>1</sub>X)</div>
+<p>Here z = β<sub>0</sub> + β<sub>1</sub>X is the <b>z-value</b> or <b>z-index</b>. Φ(z) is the area under the standard normal density to the left of z.</p>
+
+<h3>Worked example</h3>
+<p>Suppose β<sub>0</sub> = −2, β<sub>1</sub> = 3 and X = 0.4. Then z = −2 + 3 × 0.4 = −0.8, and Pr(Y=1|X=0.4) = Φ(−0.8) = 0.2119.</p>
+<div data-widget="normal"></div>
+
+<h3>Why the normal CDF?</h3>
+<ul class="plain">
+<li>The S-shape gives what we need: Pr(Y=1|X) increases in X when β<sub>1</sub> &gt; 0, and 0 ≤ Pr(Y=1|X) ≤ 1 for all X.</li>
+<li>It is easy to use: probabilities are in normal tables and any software computes them.</li>
+<li>Interpretation is relatively straightforward: β<sub>0</sub> + β<sub>1</sub>X is a z-value, and <b>β<sub>1</sub> is the change in the z-value for a unit change in X</b>, not the change in probability.</li>
+</ul>
+
+<h3>STATA example: denial on P/I ratio</h3>
+<pre class="stata">. probit deny p_irat, r
+Probit estimates                         Number of obs =   2380
+                                         Wald chi2(1)  =  40.68
+Log likelihood = -831.79234              Pseudo R2     = 0.0462
+------------------------------------------------------------------
+        deny |    Coef.   Robust SE      z    P>|z|   [95% Conf. Interval]
+      p_irat | 2.967908   .4653114    6.38   0.000   2.055914   3.879901
+       _cons |-2.194159   .1649721  -13.30   0.000  -2.517499   -1.87082</pre>
+<p>The positive coefficient makes sense: more debt relative to income means a higher chance of denial. Standard errors have their usual interpretation.</p>
+<div class="work">
+<span class="step">P/I = 0.3: Pr(deny) = Φ(−2.19 + 2.97 × 0.3) = Φ(−1.30) = 0.097</span>
+<span class="step">P/I = 0.4: Pr(deny) = Φ(−2.19 + 2.97 × 0.4) = Φ(−1.00) = 0.159</span>
+<span class="step">Effect of raising P/I from 0.3 to 0.4: 0.159 − 0.097 = 0.062 (6.2 percentage points)</span>
+</div>
+
+<h3>Probit with multiple regressors</h3>
+<div class="eq">Pr(Y=1|X<sub>1</sub>, X<sub>2</sub>) = Φ(β<sub>0</sub> + β<sub>1</sub>X<sub>1</sub> + β<sub>2</sub>X<sub>2</sub>)</div>
+<p>β<sub>1</sub> is the effect on the z-score of a unit change in X<sub>1</sub>, holding X<sub>2</sub> constant.</p>
+<pre class="stata">. probit deny p_irat black, r
+Log likelihood = -797.13604              Pseudo R2     = 0.0859
+        deny |    Coef.   Robust SE      z    P>|z|   [95% Conf. Interval]
+      p_irat | 2.741637   .4441633    6.17   0.000   1.871092   3.612181
+       black | .7081579   .0831877    8.51   0.000    .545113   .8712028
+       _cons |-2.258738   .1588168  -14.22   0.000  -2.570013  -1.947463
+
+. sca z1 = _b[_cons]+_b[p_irat]*.3+_b[black]*0
+. display "Pred prob, p_irat=.3, white: " normprob(z1)
+Pred prob, p_irat=.3, white: .07546603</pre>
+<div class="work">
+<span class="step">White, P/I = 0.3: Φ(−2.26 + 2.74 × 0.3 + 0.71 × 0) = Φ(−1.44) = 0.075</span>
+<span class="step">Black, P/I = 0.3: Φ(−2.26 + 2.74 × 0.3 + 0.71 × 1) = Φ(−0.73) = 0.233</span>
+<span class="step">Difference = 0.158, i.e. 15.8 percentage points</span>
+</div>
+<p>Is the coefficient on black significant? z = 0.708 / 0.083 = 8.51, far beyond 1.96, so yes.</p>
+`,
+questions:[
+{id:"m3q1",k:"T",type:"mc",q:"In the probit model Pr(Y=1|X) = Φ(β₀ + β₁X), what does β₁ measure?",
+ opts:["The change in Pr(Y = 1) for a unit change in X","The change in the z-index for a unit change in X","The marginal probability at the mean of X","The variance of the error term"],a:1,
+ ex:"β₁ shifts the z-value. To get the change in probability you must evaluate Φ at the old and new z and subtract."},
+{id:"m3q2",k:"T",type:"mc",q:"Which property does probit have that the LPM lacks?",
+ opts:["Coefficients equal marginal effects","Predicted probabilities always lie between 0 and 1","It can be estimated by OLS","It needs no assumption about the error distribution"],a:1,
+ ex:"Φ is a CDF, so its output always lies in [0, 1]. The LPM's straight line does not respect those bounds."},
+{id:"m3q3",k:"A",type:"num",q:"Suppose β₀ = −1.5, β₁ = 2 and X = 0.5. What is the probit predicted probability Pr(Y=1|X)? (Use the Φ calculator in the sidebar if you need it.)",
+ ans:0.3085,tol:0.003,hint:"z = −1.5 + 2 × 0.5. Then look up Φ(z).",
+ ex:"z = −1.5 + 1.0 = −0.5, and Φ(−0.5) = 0.3085."},
+{id:"m3q4",k:"A",type:"num",q:"Using the probit estimates Φ(−2.19 + 2.97 P/I), what is the predicted denial probability at P/I = 0.6?",
+ ans:0.3416,tol:0.004,
+ ex:"z = −2.19 + 2.97 × 0.6 = −0.408. Φ(−0.408) ≈ 0.342."},
+{id:"m3q5",k:"A",type:"num",q:"Using the same probit, how many <b>percentage points</b> does denial probability rise when P/I goes from 0.5 to 0.6?",
+ ans:10.1,tol:0.3,unit:"pp",hint:"Compute Φ at both z-values and subtract. Compare with 6.2 pp for 0.3 → 0.4.",
+ ex:"Φ(−2.19 + 1.485) = Φ(−0.705) = 0.240 and Φ(−0.408) = 0.342, so the rise is about 10.1 pp, bigger than the 6.2 pp for 0.3 → 0.4, because the curve is steeper there."},
+{id:"m3q6",k:"A",type:"mc",q:"From the STATA output for <i>probit deny p_irat, r</i>, what is the 95% confidence interval for the P/I coefficient, computed as coefficient ± 1.96 × SE?",
+ opts:["[2.06, 3.88]","[2.50, 3.43]","[−2.52, −1.87]","[1.87, 3.61]"],a:0,
+ ex:"2.968 ± 1.96 × 0.4653 = 2.968 ± 0.912 = [2.056, 3.880], matching STATA's interval."},
+{id:"m3q7",k:"A",type:"num",q:"In <i>probit deny p_irat black, r</i>, what is the predicted probability of denial for a <b>black</b> applicant with P/I = 0.2?",
+ ans:0.1673,tol:0.004,
+ ex:"z = −2.2587 + 2.7416 × 0.2 + 0.7082 = −1.0022. Φ(−1.002) ≈ 0.158. (Using the rounded −2.26 + 0.548 + 0.71 = −1.00 gives 0.159.)",
+ altAns:[0.158],},
+{id:"m3q8",k:"T",type:"mc",q:"A probit coefficient on X is negative. What can you conclude?",
+ opts:["Pr(Y=1) falls as X rises, at every value of X","Pr(Y=1) is negative","Pr(Y=1) falls as X rises only near the mean of X","Nothing; probit coefficient signs are not interpretable"],a:0,
+ ex:"Φ is strictly increasing, so if β₁ < 0 the z-index and hence the probability fall as X rises everywhere. The size of the fall varies with X, but the sign doesn't."},
+{id:"m3q9",k:"T",type:"open",q:"A classmate reads the probit output and says: 'The coefficient on black is 0.71, so black applicants are 71 percentage points more likely to be denied.' What is wrong, and what is the correct statement for P/I = 0.3?",
+ model:"0.71 is the change in the z-index, not in probability. To get the probability effect, evaluate Φ for both groups: Φ(−0.73) − Φ(−1.44) = 0.233 − 0.075 = 0.158. At P/I = 0.3, black applicants have a predicted denial probability about 15.8 percentage points higher than otherwise-identical white applicants (in this two-regressor model)."}
+]},
+
+{id:"m4",title:"Logit regression",mins:20,
+content:`
+<p class="lede">Logit replaces the normal CDF with the cumulative standard logistic distribution function F.</p>
+<div class="eq logit">Pr(Y=1|X) = F(β<sub>0</sub> + β<sub>1</sub>X) = 1 / (1 + e<sup>−(β<sub>0</sub> + β<sub>1</sub>X)</sup>)</div>
+<p>Because logit and probit use different probability functions, their coefficients are on different scales and should not be compared directly. Compare the <b>predicted probabilities</b> instead.</p>
+<h3>Worked example</h3>
+<div class="work">
+<span class="step">β<sub>0</sub> = −3, β<sub>1</sub> = 2, X = 0.4: &nbsp; z = −3 + 2 × 0.4 = −2.2</span>
+<span class="step">Pr(Y=1|X=0.4) = 1/(1 + e<sup>2.2</sup>) = 0.0998</span>
+</div>
+<h3>Why bother with logit if we have probit?</h3>
+<p>Mostly history: logit's closed-form CDF made it computationally faster and easier, which no longer matters. In practice the two give very similar results, and empirical conclusions rarely hinge on the choice, so both are widely used.</p>
+<h3>STATA example: HMDA</h3>
+<pre class="stata">. logit deny p_irat black, r
+Log likelihood = -795.69521              Pseudo R2     = 0.0876
+        deny |    Coef.   Robust SE      z    P>|z|   [95% Conf. Interval]
+      p_irat | 5.370362   .9633435    5.57   0.000   3.482244   7.258481
+       black | 1.272782   .1460986    8.71   0.000   .9864339    1.55913
+       _cons |-4.125558    .345825  -11.93   0.000  -4.803362  -3.447753
+
+Pred prob, p_irat=.3, white: .07485143
+   NOTE: the probit predicted probability is .07546603</pre>
+<p>The logit coefficients are roughly 1.8–2 times the probit ones, yet the predicted probabilities almost coincide (0.0749 vs 0.0755). The logistic distribution has a larger standard deviation (about 1.81 vs 1), so its coefficients must be bigger to describe the same curve.</p>
+<div data-widget="compare"></div>
+`,
+questions:[
+{id:"m4q1",k:"T",type:"mc",q:"What function does logit use to map the index z = β₀ + β₁X into a probability?",
+ opts:["Φ(z), the standard normal CDF","1/(1 + e^(−z))","e^z","z itself, truncated to [0, 1]"],a:1,
+ ex:"Logit uses the standard logistic CDF F(z) = 1/(1 + e^(−z))."},
+{id:"m4q2",k:"A",type:"num",q:"With β₀ = −2, β₁ = 4 and X = 0.25, what is the logit predicted probability?",
+ ans:0.2689,tol:0.003,
+ ex:"z = −2 + 4 × 0.25 = −1, so F(−1) = 1/(1 + e¹) = 0.2689."},
+{id:"m4q3",k:"A",type:"num",q:"Using the HMDA logit (−4.1256 + 5.3704 P/I + 1.2728 black), what is the predicted denial probability for a black applicant with P/I = 0.3?",
+ ans:0.2241,tol:0.004,
+ ex:"z = −4.1256 + 1.6111 + 1.2728 = −1.2417, so F(−1.2417) = 0.224. The probit gave 0.233, very close."},
+{id:"m4q4",k:"A",type:"num",q:"Using that logit, what is the black–white difference in predicted denial probability at P/I = 0.3, in <b>percentage points</b>?",
+ ans:14.9,tol:0.4,unit:"pp",
+ ex:"0.2241 − 0.0749 = 0.149, about 14.9 pp. Probit gave 15.8 pp: similar substantive conclusion."},
+{id:"m4q5",k:"T",type:"mc",q:"A logit coefficient is 1.27 and the probit coefficient for the same variable is 0.71. What is the best conclusion?",
+ opts:["The logit model finds an effect almost twice as large","The probit model is mis-specified","The scales differ because the logistic and normal distributions differ; compare predicted probabilities instead","One of the two models must have a coding error"],a:2,
+ ex:"Coefficients are in index units specific to each distribution. Logit coefficients are typically about 1.6–2 times probit ones, while the implied probabilities are similar."},
+{id:"m4q6",k:"T",type:"mc",q:"At what value of the index z do both probit and logit give Pr(Y=1) = 0.5?",
+ opts:["z = 0","z = 1","z = 0.5","It differs between the two models"],a:0,
+ ex:"Both the standard normal and the standard logistic are symmetric around 0, so Φ(0) = F(0) = 0.5."},
+{id:"m4q7",k:"T",type:"mc",q:"According to the lecture, what is the main reason logit is used alongside probit?",
+ opts:["Logit is always more accurate","Historically logit was computationally faster and easier; results are usually similar","Logit allows probabilities above 1","Logit doesn't need maximum likelihood"],a:1,
+ ex:"The original advantage was computational. Today both are trivial to estimate, and conclusions rarely depend on the choice."}
+]},
+
+{id:"m5",title:"Effects that depend on X",mins:25,
+content:`
+<p class="lede">The biggest practical difference between the LPM and probit/logit is how a change in X affects the probability.</p>
+<p>In the LPM the effect of ΔX is always β<sub>1</sub>ΔX. In probit and logit, the effect of a change in X is the change in the conditional probability that Y = 1, and it <b>depends on the initial value of X</b>:</p>
+<div class="eq">ΔP̂ = G(β<sub>0</sub> + β<sub>1</sub>(X + ΔX)) − G(β<sub>0</sub> + β<sub>1</sub>X), &nbsp;&nbsp; G = Φ (probit) or F (logit)</div>
+<p>The recipe is always the same: compute the predicted probability at the starting values, compute it at the new values, subtract. With several regressors, hold the others fixed at chosen values (often the sample means, or a "typical" applicant).</p>
+<p>The S-curve is steepest where the probability is near 0.5 (z near 0), so the same ΔX moves the probability most there and least in the tails.</p>
+<div data-widget="lab"></div>
+<h3>Probit: same 0.1 increase in P/I, different starting points</h3>
+<div class="tbl-wrap"><table>
+<tr><th>P/I change</th><th>Pr before</th><th>Pr after</th><th>Probit effect</th><th>LPM effect</th></tr>
+<tr><td>0.1 → 0.2</td><td class="num">0.029</td><td class="num">0.055</td><td class="num">2.6 pp</td><td class="num">6.0 pp</td></tr>
+<tr><td>0.3 → 0.4</td><td class="num">0.096</td><td class="num">0.157</td><td class="num">6.1 pp</td><td class="num">6.0 pp</td></tr>
+<tr><td>0.5 → 0.6</td><td class="num">0.239</td><td class="num">0.340</td><td class="num">10.1 pp</td><td class="num">6.0 pp</td></tr>
+<tr><td>0.7 → 0.8</td><td class="num">0.454</td><td class="num">0.571</td><td class="num">11.8 pp</td><td class="num">6.0 pp</td></tr>
+</table></div>
+<p class="sp-key">Probit: Φ(−2.194 + 2.968 P/I). LPM: −0.080 + 0.604 P/I.</p>
+<p>Near the typical P/I ratio (about 0.33), the two models agree. Away from it they diverge sharply: this is exactly the LPM disadvantage from Unit 1.</p>
+`,
+questions:[
+{id:"m5q1",k:"T",type:"mc",q:"For a probit model with β₁ > 0, where is the effect of a small increase in X on Pr(Y=1) largest?",
+ opts:["Where Pr(Y=1) is close to 0","Where Pr(Y=1) is close to 0.5","Where Pr(Y=1) is close to 1","It is the same everywhere"],a:1,
+ ex:"The slope of Φ is the normal density φ(z), which peaks at z = 0, where Φ(z) = 0.5."},
+{id:"m5q2",k:"A",type:"num",q:"Probit: Φ(−2.194 + 2.968 P/I). What is the effect, in <b>percentage points</b>, of raising P/I from 0.1 to 0.2?",
+ ans:2.58,tol:0.2,unit:"pp",
+ ex:"Φ(−1.897) = 0.0289, Φ(−1.600) = 0.0547, difference ≈ 2.6 pp, much smaller than the LPM's 6.0 pp."},
+{id:"m5q3",k:"T",type:"mc",q:"To report a single 'effect of race' from a probit with many regressors, the HMDA study computed the change in predicted probability for a hypothetical applicant. What values did it use for the other regressors?",
+ opts:["All zeros","The sample means","The values for the median black applicant","The maximum observed values"],a:1,
+ ex:"Table 11.2's final row computes the white-vs-black difference for an applicant whose other regressors equal the sample mean."},
+{id:"m5q4",k:"A",type:"mc",q:"Two applicants each see P/I rise by 0.1. Applicant A starts with a predicted denial probability of 0.03; B starts at 0.45. In a probit model, which applicant's probability rises more?",
+ opts:["A","B","Both rise by the same amount","Can't tell without the coefficient"],a:1,
+ ex:"B is near the middle of the S-curve where it is steepest; A is in the flat lower tail. (With β₁ > 0 the direction is up for both.)"},
+{id:"m5q5",k:"A",type:"num",q:"Logit with β₀ = 0 and β₁ = 1. What is the change in Pr(Y=1) when X rises from 0 to 1?",
+ ans:0.2311,tol:0.003,
+ ex:"F(1) − F(0) = 0.7311 − 0.5000 = 0.2311."},
+{id:"m5q6",k:"T",type:"open",q:"Use the curve lab above (HMDA white-applicant preset). Find a P/I value where the LPM and probit predicted probabilities are close, and one where they differ by more than 10 percentage points. What do you conclude about when the LPM is a reasonable approximation?",
+ model:"Near the middle of the data (P/I around 0.2–0.5) the LPM and probit predictions are within a couple of points. At high P/I (e.g. 1.0 or more) probit predicts much higher denial probabilities than the LPM line, and at very low P/I the LPM goes negative. The LPM is a reasonable approximation of average effects near the bulk of the data, but poor for predictions at extreme X values."}
+]},
+
+{id:"m6",title:"Estimation and measures of fit",mins:20,
+content:`
+<p class="lede">Probit and logit are nonlinear in the coefficients, so OLS doesn't apply. They are estimated by maximum likelihood.</p>
+<h3>Maximum likelihood, briefly</h3>
+<p>The likelihood is the probability of observing the actual sample of 0s and 1s, viewed as a function of the coefficients. For observation i, the probability of what happened is p<sub>i</sub> if Y<sub>i</sub> = 1 and (1 − p<sub>i</sub>) if Y<sub>i</sub> = 0, where p<sub>i</sub> = Φ(β<sub>0</sub>+β<sub>1</sub>X<sub>i</sub>) for probit. MLE picks the β's that make the observed data most probable. The STATA "Iteration" lines show the log likelihood climbing until it stops changing.</p>
+<p>In large samples the MLE coefficients are consistent and normally distributed, so hypothesis tests and confidence intervals work as usual: t (z) statistics, coefficient ± 1.96 SE, and F (Wald) tests of joint hypotheses.</p>
+<h3>Why the usual R² doesn't fit</h3>
+<p>Y is only 0 or 1 while predictions are probabilities, so the R² and adjusted R² don't make sense here. Two specialised measures are used instead.</p>
+<p><b>Fraction correctly predicted.</b> Predict Y = 1 when p̂ &gt; 0.5 and Y = 0 when p̂ &lt; 0.5, and count how often that prediction matches the actual Y. Its weakness: with rare outcomes (only 12% of HMDA applications are denied) a model that always predicts "accept" is right 88% of the time.</p>
+<p><b>Pseudo-R².</b> It measures the improvement in the log likelihood relative to a model with no X's:</p>
+<div class="eq">pseudo-R² = 1 − ln(f<sub>max</sub>) / ln(f<sub>0</sub>)</div>
+<p>In the HMDA probit with P/I only, ln f<sub>max</sub> = −831.79 and the intercept-only log likelihood (STATA's "Iteration 0") is −872.09, so pseudo-R² = 1 − 831.79/872.09 = 0.046. In the linear model with normal errors, the pseudo-R² simplifies to the usual R².</p>
+<div data-widget="fit"></div>
+`,
+questions:[
+{id:"m6q1",k:"T",type:"mc",q:"How are probit and logit coefficients estimated?",
+ opts:["Ordinary least squares","Maximum likelihood","Instrumental variables","Weighted least squares with weights p(1−p)"],a:1,
+ ex:"Because Pr(Y=1|X) is a nonlinear function of the β's, they are estimated by maximum likelihood."},
+{id:"m6q2",k:"A",type:"num",q:"For <i>probit deny p_irat black</i>, the final log likelihood is −797.136 and the iteration-0 (intercept only) value is −872.085. Compute the pseudo-R².",
+ ans:0.0859,tol:0.0015,
+ ex:"1 − (−797.136)/(−872.085) = 1 − 0.9141 = 0.0859, matching STATA's Pseudo R2."},
+{id:"m6q3",k:"A",type:"num",q:"A logit model on 400 observations: 60 have Y = 1, of which 24 have p̂ > 0.5. Of the 340 with Y = 0, 330 have p̂ < 0.5. What is the fraction correctly predicted?",
+ ans:0.885,tol:0.003,
+ ex:"(24 + 330)/400 = 354/400 = 0.885."},
+{id:"m6q4",k:"T",type:"mc",q:"Continuing the previous question: a 'model' that always predicts Y = 0 would correctly predict what fraction?",
+ opts:["0.15","0.50","0.85","0.885"],a:2,
+ ex:"340/400 = 0.85. The logit beats that only slightly, which shows why the fraction correctly predicted can be misleading when outcomes are rare."},
+{id:"m6q5",k:"T",type:"mc",q:"Why is the ordinary R² not used for probit and logit?",
+ opts:["It is always negative","Y is binary while the model predicts probabilities, so the R² doesn't have its usual meaning, and the models aren't fitted by least squares","STATA does not report it","It is identical to the pseudo-R²"],a:1,
+ ex:"With a 0/1 outcome, even a perfect probability model leaves residuals; and probit/logit maximise the likelihood, not minimise squared residuals."},
+{id:"m6q6",k:"T",type:"mc",q:"In large samples, how do we test H₀: β₁ = 0 in a probit?",
+ opts:["We can't; probit coefficients have no standard errors","Use the usual z (t) statistic: β̂₁/SE(β̂₁), compared with ±1.96 at 5%","Check whether the pseudo-R² exceeds 0.5","Compare the fraction correctly predicted with 0.5"],a:1,
+ ex:"MLE estimators are approximately normal in large samples, so the usual t/z tests and confidence intervals apply."},
+{id:"m6q7",k:"A",type:"num",q:"In <i>logit deny p_irat black, r</i>, the coefficient on black is 1.2728 with robust SE 0.1461. What is the z-statistic?",
+ ans:8.71,tol:0.05,
+ ex:"1.2728 / 0.1461 ≈ 8.71, as reported. The coefficient is highly significant."}
+]},
+
+{id:"m7",title:"Application: the Boston HMDA study",mins:30,
+content:`
+<p class="lede">Is there differential access to home loans by race? The regressions so far suggest a large race gap, but they may suffer from omitted variable bias.</p>
+<h3>How the loan decision was made (circa 1990–91)</h3>
+<p>An applicant went to a bank or mortgage company, filled out an application with personal and financial information, and met a loan officer. The officer then decided, by law, in a race-blind way. Presumably the bank wants profitable loans and the officer doesn't want to originate defaults (if the bank's internal incentives are right, a big if during the mid-2000s housing bubble).</p>
+<p>The loan officer uses key financial variables: the P/I ratio, the housing expense-to-income ratio, the loan-to-value ratio, and personal credit history. The decision rule is nonlinear: a loan-to-value ratio above 80% or above 95% matters (what happens in default?), as does the credit score.</p>
+<h3>The omitted variable problem</h3>
+<p>Variables that (i) enter the loan officer's decision and (ii) are or could be correlated with race include wealth, type of employment, credit history and family status. Leaving them out biases the race coefficient. Fortunately, the HMDA data set is very rich.</p>
+<h3>Table 11.2: mortgage denial regressions</h3>
+<p class="sp-key">Click any coefficient to see its t-statistic and interpretation. ** significant at 1%, * at 5%. Standard errors in parentheses.</p>
+<div data-widget="table112"></div>
+<div id="cellInfo" class="note" style="display:none"></div>
+<h3>F-statistics testing groups of variables (p-values in parentheses)</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Hypothesis: these coefficients are all zero</th><th>(4)</th><th>(5)</th><th>(6)</th></tr>
+<tr><td>Single, high-school diploma, industry unemployment rate</td><td class="num">5.85 (&lt;0.001)</td><td class="num">5.22 (0.001)</td><td class="num">5.79 (&lt;0.001)</td></tr>
+<tr><td>Additional credit rating indicators</td><td></td><td class="num">1.22 (0.291)</td><td></td></tr>
+<tr><td>Race interactions and black</td><td></td><td></td><td class="num">4.96 (0.002)</td></tr>
+<tr><td>Race interactions only</td><td></td><td></td><td class="num">0.27 (0.766)</td></tr>
+</table></div>
+<div class="tbl-wrap"><table>
+<tr><th>White vs black difference in predicted denial probability</th><th>(1) LPM</th><th>(2) Logit</th><th>(3) Probit</th><th>(4)</th><th>(5)</th><th>(6)</th></tr>
+<tr><td>Percentage points, applicant at sample means</td><td class="num">8.4</td><td class="num">6.0</td><td class="num">7.1</td><td class="num">6.6</td><td class="num">6.3</td><td class="num">6.5</td></tr>
+</table></div>
+<h3>Summary of empirical results</h3>
+<ul class="plain">
+<li>Coefficients on the financial variables make sense.</li>
+<li><span class="mu">black</span> is statistically significant in all specifications (jointly with its interactions in column 6).</li>
+<li>Race–financial variable interactions are not significant.</li>
+<li>Including the covariates sharply reduces the effect of race on denial probability: from about 16–18 points to about 6–8 points.</li>
+<li>LPM, probit and logit give similar estimates of the effect of race.</li>
+<li>The estimated effects are large in a real-world sense: against a 12% average denial rate, 6–8 points is a lot.</li>
+</ul>
+`,
+questions:[
+{id:"m7q1",k:"T",type:"mc",q:"Why might the simple probit of deny on P/I and black overstate the effect of race?",
+ opts:["Because probit coefficients are always too large","Because variables like credit history and wealth affect denial and may be correlated with race, causing omitted variable bias","Because the sample is too small","Because race is a binary regressor"],a:1,
+ ex:"Omitted variable bias requires both conditions: the omitted variable affects Y and is correlated with the included regressor. Credit history and wealth plausibly satisfy both."},
+{id:"m7q2",k:"A",type:"mc",q:"In column (1), the LPM, the coefficient on black is 0.084 (SE 0.023). Which interpretation is correct?",
+ opts:["Black applicants are 0.084% more likely to be denied","Holding the other regressors constant, black applicants have a denial probability 8.4 percentage points higher","Black applicants' z-index is 0.084 higher","8.4% of black applicants are denied"],a:1,
+ ex:"In the LPM a coefficient on a 0/1 regressor is the difference in probability: 0.084 = 8.4 percentage points, holding the other variables fixed."},
+{id:"m7q3",k:"A",type:"num",q:"Column (3) probit: the coefficient on black is 0.389 with SE 0.098. Compute the t-statistic.",
+ ans:3.97,tol:0.05,
+ ex:"0.389/0.098 ≈ 3.97 > 2.58, so significant at the 1% level (hence **)."},
+{id:"m7q4",k:"A",type:"mc",q:"In column (6), the coefficient on black is 0.246 (SE 0.448), not individually significant. Yet the F-test on 'race interactions and black' is 4.96 (p = 0.002). What's the right conclusion?",
+ opts:["Race does not matter for denial","Race matters: jointly, black and its interactions are significant; the individual coefficient is imprecise because of collinearity with the interactions","The F-test must be wrong","Only the interactions matter"],a:1,
+ ex:"Including black × P/I and black × housing-expense terms makes the black coefficient hard to pin down separately, but the joint test strongly rejects 'no race effect'. The interactions alone are insignificant (F = 0.27, p = 0.766)."},
+{id:"m7q5",k:"T",type:"mc",q:"The F-statistic for 'race interactions only' in column (6) is 0.27 (p = 0.766). What does this suggest?",
+ opts:["The effect of race is the same at different P/I and housing-expense ratios","Race has no effect","The financial variables are irrelevant","The model should be estimated by OLS"],a:0,
+ ex:"Failing to reject means there's no evidence that the race gap differs with the financial ratios; the race effect looks like a level shift."},
+{id:"m7q6",k:"A",type:"num",q:"In the LPM (column 1), the coefficient on 'denied mortgage insurance' is 0.702. By how many percentage points does being denied mortgage insurance change the predicted denial probability?",
+ ans:70.2,tol:0.3,unit:"pp",
+ ex:"0.702 × 100 = 70.2 percentage points, a huge effect, holding other regressors fixed."},
+{id:"m7q7",k:"A",type:"mc",q:"Column (5) adds extra credit-rating indicators; their joint F is 1.22 (p = 0.291). What do you conclude?",
+ opts:["They're jointly significant at 5%","They're not jointly significant at conventional levels; the simpler credit-score coding is adequate","The race effect disappears","The model is misspecified"],a:1,
+ ex:"p = 0.291 > 0.05, so we can't reject that all the additional indicators have zero coefficients."},
+{id:"m7q8",k:"T",type:"mc",q:"Comparing the two-regressor LPM (race gap 17.7 pp) with column (1) (8.4 pp), what happened?",
+ opts:["The race effect rose","Adding controls roughly halved the estimated race effect, consistent with omitted variable bias in the simpler regression","The two numbers are not comparable at all","The race effect became negative"],a:1,
+ ex:"Including financial and credit variables correlated with race absorbs part of what the simple model attributed to race, but a sizeable, significant gap remains."},
+{id:"m7q9",k:"T",type:"open",q:"List two remaining threats to internal validity and one threat to external validity for the HMDA conclusion that race affected mortgage denials.",
+ model:"Internal: (1) remaining omitted variables that loan officers saw but the data don't record (e.g. details of employment stability, informal information from the interview) that are correlated with race; (2) functional form misspecification, or measurement error in variables like credit scores. Others: sample selection (who applies). External: the data are from Boston in 1990; lending practices, regulation and credit scoring have changed since, so the size of the gap may differ in other places or times."}
+]},
+
+{id:"m8",title:"Final practice test",mins:30,
+content:`
+<p class="lede">Twelve mixed questions covering the whole topic. Try them without notes first, then use the formula sheet and calculator to check yourself.</p>
+<p>Aim for about 2–3 minutes per question. Your score updates as you go; you can reset just this test with the button below the questions.</p>
+`,
+questions:[
+{id:"m8q1",k:"T",type:"mc",q:"Which of the three models can produce a predicted probability of 1.15?",
+ opts:["Probit only","Logit only","The linear probability model only","All three"],a:2,
+ ex:"Only the LPM's straight line is unbounded. Φ and F always lie strictly between 0 and 1."},
+{id:"m8q2",k:"A",type:"num",q:"Probit: Pr(Y=1|X) = Φ(−1 + 0.5X). What is the predicted probability when X = 4?",
+ ans:0.8413,tol:0.003,
+ ex:"z = −1 + 2 = 1. Φ(1) = 0.8413."},
+{id:"m8q3",k:"A",type:"num",q:"Logit: Pr(Y=1|X) = F(1 − 0.2X). What is the predicted probability when X = 10?",
+ ans:0.2689,tol:0.003,
+ ex:"z = 1 − 2 = −1; F(−1) = 0.2689."},
+{id:"m8q4",k:"T",type:"mc",q:"In probit and logit, the effect of a change in X on Pr(Y=1)…",
+ opts:["equals β₁ × ΔX","depends on the initial value of X (and of the other regressors)","is always largest when X = 0","cannot be computed"],a:1,
+ ex:"Because the CDF is nonlinear, ΔP = G(z_new) − G(z_old) depends on where you start."},
+{id:"m8q5",k:"A",type:"num",q:"An LPM gives Ŷ = 0.20 + 0.03 educ, where educ is years of schooling and Y = 1 if employed. What is the predicted change in employment probability (in percentage points) from 4 extra years of schooling?",
+ ans:12,tol:0.2,unit:"pp",
+ ex:"0.03 × 4 = 0.12 = 12 percentage points."},
+{id:"m8q6",k:"T",type:"mc",q:"The pseudo-R² compares…",
+ opts:["the sum of squared residuals with and without the X's","the maximised log likelihood with the X's to the log likelihood with only an intercept","the fraction correctly predicted to 0.5","logit to probit"],a:1,
+ ex:"pseudo-R² = 1 − ln f_max / ln f_0, where f_0 is the intercept-only likelihood."},
+{id:"m8q7",k:"A",type:"num",q:"Probit: Φ(−0.5 + 0.8 female + 0.1 age), Y = 1 if the person votes. What is the effect of being female, in percentage points, for a 5-year-older-than-baseline… no: for age = 0 (age is centred)? Compute Φ(0.3) − Φ(−0.5).",
+ ans:30.94,tol:0.4,unit:"pp",
+ ex:"Φ(0.3) = 0.6179 and Φ(−0.5) = 0.3085, so the difference is 0.3094 = 30.9 pp."},
+{id:"m8q8",k:"T",type:"mc",q:"Why do we report heteroskedasticity-robust standard errors in an LPM but the question is less central for probit/logit?",
+ opts:["Probit/logit errors are homoskedastic by construction","In the LPM, Var(u|X) = p(1−p) varies with X, while probit/logit model the Bernoulli variance directly through the likelihood","Robust SEs are never needed in probit","The LPM has fewer observations"],a:1,
+ ex:"The binary nature of Y makes the LPM error heteroskedastic. Probit and logit specify the full distribution of Y given X, so the likelihood already accounts for Var(Y|X) = p(1−p). (STATA's ', r' still guards against misspecification.)"},
+{id:"m8q9",k:"A",type:"mc",q:"Probit estimates: β̂_union = −0.42 (SE 0.25) in a model of Y = 1 if a worker quits. At the 5% level…",
+ opts:["union significantly lowers quitting (|t| = 1.68 > 1.96)","the coefficient is not significant (|t| = 1.68 < 1.96)","the effect is −42 percentage points","the effect is significant because it's negative"],a:1,
+ ex:"t = −0.42/0.25 = −1.68; |−1.68| < 1.96, so not significant at 5% (it is at 10%)."},
+{id:"m8q10",k:"T",type:"mc",q:"In the HMDA study, which statement is supported by the results?",
+ opts:["Race is insignificant once financial variables are added","Logit gives a race effect several times larger than probit","Adding covariates reduced the estimated race effect, but a significant gap of roughly 6–8 points remained","Race interacts strongly with the P/I ratio"],a:2,
+ ex:"See the summary of empirical results in Unit 5."},
+{id:"m8q11",k:"A",type:"num",q:"Logit: F(−4.1256 + 5.3704 P/I) for a white applicant. What is the predicted denial probability at P/I = 0.5?",
+ ans:0.1949,tol:0.004,
+ ex:"z = −4.1256 + 2.6852 = −1.4404; F(−1.4404) = 1/(1 + e^1.4404) ≈ 0.191. (Using full precision: ≈ 0.1915.)",
+ altAns:[0.1915]},
+{id:"m8q12",k:"T",type:"open",q:"Summarise in 4–5 sentences when you'd use an LPM versus probit/logit, and how you'd report the effect of a regressor from a probit to a non-technical audience.",
+ model:"The LPM is easy to estimate and interpret and gives good approximations to average effects near the bulk of the data; it's a useful first look and a robustness check, but it can give probabilities outside [0, 1] and imposes constant effects. Probit and logit keep probabilities in [0, 1] and let effects vary with X, so they're preferred for prediction and for effects far from typical values; the two usually give similar answers. To report a probit effect, choose a meaningful baseline (e.g. a typical applicant at sample means), compute predicted probabilities with and without the change, and state the difference in percentage points, e.g. 'raising the P/I ratio from 0.3 to 0.4 increases the chance of denial from about 10% to 16%'."}
+]}
+];
+
+/* fix m3q7 and m8q7, m8q11 precise answers */
+(function(){
+  const q7=BANK[2].questions.find(q=>q.id==="m3q7");
+  const z=-2.258738+2.741637*0.2+0.7081579; q7.ans=Phi(z); q7.altAns=[Phi(-1.0)];
+  q7.ex="z = −2.2587 + 2.7416 × 0.2 + 0.7082 = "+z.toFixed(3)+". Φ("+z.toFixed(3)+") ≈ "+f3(Phi(z))+". (With the rounded coefficients, −2.26 + 0.548 + 0.71 = −1.00 and Φ(−1.00) = 0.159; both are accepted.)";
+  const f=BANK[7].questions.find(q=>q.id==="m8q7");
+  f.q="Probit for voting: Pr(vote=1) = Φ(−0.5 + 0.8 female + 0.1 age_c), where age_c is age minus the sample mean. For someone of average age (age_c = 0), what is the effect of being female on the probability of voting, in percentage points?";
+  f.ans=(Phi(0.3)-Phi(-0.5))*100;
+  const l=BANK[7].questions.find(q=>q.id==="m8q11");
+  const zz=-4.125558+5.370362*0.5; l.ans=Lgt(zz); l.altAns=[];
+  l.ex="z = −4.1256 + 5.3704 × 0.5 = "+zz.toFixed(4)+"; F(z) = 1/(1 + e^"+(-zz).toFixed(4)+") ≈ "+f3(Lgt(zz))+".";
+})();
+
+BANK.forEach(m=>m.questions.forEach(q=>{q.src=m.id;}));
+const QB={};BANK.forEach(m=>m.questions.forEach(q=>{QB[q.id]=q;}));
+const BC=id=>BANK.find(m=>m.id===id).content;
+const pick=ids=>ids.map(id=>QB[id]);
+
+const PRE=[
+{id:"pre1",k:"T",type:"num",q:"Y = 1 if a person owns a car. Among people with income X = x, 30% own a car. What is E(Y | X = x)?",ans:0.3,tol:0.001,unit2:1,
+ ex:"For a 0/1 variable, the conditional mean is the probability that Y = 1, so E(Y|X=x) = 0.30."},
+{id:"pre2",k:"T",type:"mc",q:"Which model can give a predicted probability greater than 1?",opts:["Probit","Logit","Linear probability model","None of them"],a:2,unit2:1,
+ ex:"The LPM is a straight line, so it is unbounded."},
+{id:"pre3",k:"A",type:"num",q:"An LPM gives Ŷ = 0.10 + 0.20X. What is the predicted probability that Y = 1 when X = 2?",ans:0.5,tol:0.002,unit2:1,
+ ex:"0.10 + 0.20 × 2 = 0.50."},
+{id:"pre4",k:"T",type:"mc",q:"Probit regression models Pr(Y = 1 | X) using…",opts:["the logistic CDF","the standard normal CDF Φ","a straight line","the exponential function"],a:1,unit2:2,
+ ex:"Probit: Pr(Y=1|X) = Φ(β₀ + β₁X)."},
+{id:"pre5",k:"A",type:"num",q:"A probit has β₀ = −1 and β₁ = 2. What is Pr(Y = 1) when X = 0.5?",ans:0.5,tol:0.002,unit2:2,
+ ex:"z = −1 + 2 × 0.5 = 0, and Φ(0) = 0.5."},
+{id:"pre6",k:"T",type:"mc",q:"In a probit or logit, the effect on Pr(Y = 1) of a one-unit change in X…",opts:["equals the coefficient","depends on the starting value of X","is always 0.5","cannot be computed"],a:1,unit2:3,
+ ex:"The S-curve has a different slope at different points."},
+{id:"pre7",k:"T",type:"mc",q:"Probit and logit coefficients are usually estimated by…",opts:["OLS","maximum likelihood","two-stage least squares","the method of moments"],a:1,unit2:4,
+ ex:"They are nonlinear in the coefficients, so maximum likelihood is used."},
+{id:"pre8",k:"T",type:"mc",q:"In a study of mortgage denial, adding credit history variables reduces the estimated effect of race. This is most likely evidence of…",opts:["heteroskedasticity","omitted variable bias in the shorter regression","perfect multicollinearity","a coding error"],a:1,unit2:5,
+ ex:"Credit history affects denial and is correlated with race, so omitting it biased the race coefficient."}
+];
+
+const UNITS=[
+{id:"pre",short:"Pre-test",title:"Pre-test",mins:10,brief:true,
+ outcomes:null,
+ content:`<p class="lede">Before you start, find out what you already know. Eight short questions, about 10 minutes.</p>
+ <p>Don't look anything up and don't worry about your score: the pre-test only shows you which units need the most attention. You'll see whether each answer is right, but explanations are saved for the units themselves. At the end of the SIM you'll take a post-test and compare.</p>`,
+ questions:PRE},
+{id:"u1",short:"Unit 1",title:"Binary dependent variables and the linear probability model",mins:35,
+ outcomes:["Explain why E(Y|X) = Pr(Y=1|X) when Y is binary.","Interpret LPM coefficients as changes in probability.","Compute predicted probabilities and effects from an estimated LPM.","State the two main weaknesses of the LPM."],
+ think:"A bank approves or rejects your loan: there's no \"partly approved\". If you ran an ordinary regression of approve (0 or 1) on income, what would a fitted value of 0.8 mean?",
+ content:`<h2>1A. Why binary Y is different</h2>`+BC("m1")+`<h2>1B. The linear probability model</h2>`+BC("m2"),
+ activities:{lpm:{title:"Activity 1.1: Exploring the LPM (5 minutes)",tasks:["With the P/I-only model, set P/I = 0.3 and 0.4. Confirm the predictions 0.101 and 0.162.","Slide P/I down until the prediction turns negative. Write down the P/I value where this happens.","Slide P/I up to 2.0. What does the model predict? Why is that a problem?","Switch to \"P/I + black\". Check that the race gap is 17.7 points at P/I = 0.3 and also at P/I = 1.0. Why is it the same?"]}},
+ keypoints:["When Y is binary, E(Y|X) = Pr(Y=1|X), so a regression of Y on X models a probability.","In the LPM, Pr(Y=1|X) = β₀ + β₁X and β₁ is the change in probability per unit of X.","LPM errors are heteroskedastic by construction: always use robust standard errors.","Weaknesses: a constant effect of X, and predicted probabilities that can fall below 0 or above 1."],
+ questions:pick(["m1q1","m1q3","m2q1","m2q2","m2q4","m2q5","m2q6","m2q9"])},
+{id:"u2",short:"Unit 2",title:"Probit regression",mins:35,
+ outcomes:["Write down the probit model and explain the role of Φ.","Compute probit predicted probabilities from coefficients or STATA output.","Compute the effect of a change in X as a difference in predicted probabilities.","Interpret probit coefficients, standard errors and confidence intervals."],
+ think:"In Unit 1 the LPM predicted a negative probability of denial for low P/I ratios. What shape would a curve need to have so this can never happen?",
+ content:BC("m3"),
+ activities:{normal:{title:"Activity 2.1: From z-index to probability (5 minutes)",tasks:["Leave β₀ = −2, β₁ = 3, X = 0.4 and confirm Φ(−0.8) = 0.2119.","Set β₀ = −2.19 and β₁ = 2.97 (the HMDA estimates). Read off Pr(deny) at X = 0.3 and at X = 0.4. Do you get 0.097 and 0.159?","Make β₁ negative. Which way does the probability move as X rises?"]}},
+ keypoints:["Probit: Pr(Y=1|X) = Φ(β₀ + β₁X + …), which is always between 0 and 1.","β₁ is the change in the z-index, not in the probability.","To get an effect: compute Φ at the new z and the old z, then subtract.","Standard errors, t-statistics and confidence intervals are used in the usual way."],
+ questions:pick(["m3q1","m3q3","m3q4","m3q5","m3q6","m3q7","m3q9"])},
+{id:"u3",short:"Unit 3",title:"Logit regression and effects that depend on X",mins:30,
+ outcomes:["Write down the logit model and compute logit predicted probabilities.","Explain why logit and probit coefficients differ while their probabilities are similar.","Show that in probit and logit the effect of ΔX depends on the starting value of X."],
+ think:"Raising your P/I ratio from 0.1 to 0.2 versus from 0.7 to 0.8: would a loan officer react to these two changes in the same way?",
+ content:`<h2>3A. Logit regression</h2>`+BC("m4")+`<h2>3B. Effects that depend on X</h2>`+BC("m5"),
+ activities:{
+  compare:{title:"Activity 3.1: Probit, logit and LPM side by side (4 minutes)",tasks:["At P/I = 0.3 for a white applicant, note the three predicted probabilities. How far apart are they?","Move P/I to 1.5. Which model now stands out, and why?","Switch to a black applicant and repeat."]},
+  lab:{title:"Activity 3.2: Same change, different effects (6 minutes)",tasks:["Keep ΔP/I = 0.10. Set the starting P/I to 0.1, then 0.3, 0.5 and 0.7. Record the probit effect each time.","Does the LPM effect change? Why not?","Find the starting P/I where the probit effect is largest. What is the predicted probability there (roughly)?"]}},
+ keypoints:["Logit: Pr(Y=1|X) = 1/(1 + e^−(β₀+β₁X)).","Logit coefficients are roughly 1.6–2 times probit coefficients; compare predicted probabilities, not coefficients.","In probit and logit, ΔP = G(z_new) − G(z_old) depends on where you start; effects are largest near Pr = 0.5.","Near typical X values, LPM, probit and logit give similar answers."],
+ questions:pick(["m4q1","m4q3","m4q5","m4q7","m5q1","m5q2","m5q4","m5q6"])},
+{id:"u4",short:"Unit 4",title:"Estimation and measures of fit",mins:15,
+ outcomes:["Explain why probit and logit are estimated by maximum likelihood.","Compute and interpret the fraction correctly predicted and the pseudo-R²."],
+ think:"Only 12% of mortgage applications are denied. How accurate would a model be that simply predicts \"accept\" for everyone?",
+ content:BC("m6"),
+ activities:{fit:{title:"Activity 4.1: Scoring predictions (3 minutes)",tasks:["At the 0.5 cutoff, how many of the 12 applicants are correctly predicted?","Compare with always predicting \"accept\". What do you notice?","Lower the cutoff to 0.30. What happens to the fraction correctly predicted?"]}},
+ keypoints:["Probit and logit are estimated by maximum likelihood; in large samples the usual tests and intervals apply.","Fraction correctly predicted uses a 0.5 cutoff; it can look good even for a useless model when outcomes are rare.","pseudo-R² = 1 − ln f_max / ln f₀ measures the improvement over an intercept-only model."],
+ questions:pick(["m6q1","m6q2","m6q3","m6q4","m6q7"])},
+{id:"u5",short:"Unit 5",title:"Application: mortgage denial in Boston",mins:30,
+ outcomes:["Explain why omitted variable bias threatens the simple race regressions.","Read and interpret Table 11.2, including t-tests and joint F-tests.","Summarise the empirical findings and their limitations."],
+ think:"If black applicants on average had weaker credit histories in 1990, what would a regression of denial on race alone pick up?",
+ content:BC("m7"),
+ activities:{table112:{title:"Activity 5.1: Reading Table 11.2 (6 minutes)",tasks:["Click the black coefficient in each of columns (1) to (6). Write down each t-statistic.","Which column's black coefficient is not individually significant? Use the F-tests below the table to explain why race still matters there.","Click 'denied mortgage insurance' in column (1). Interpret the number in words."]}},
+ keypoints:["Simple regressions suggested a race gap of about 16–18 points; controls for financial and credit variables cut it to about 6–8 points.","black remains significant in every specification; race interactions are not significant.","LPM, probit and logit agree on the size of the race effect.","Remaining concerns: omitted variables not in the data, and external validity beyond Boston in 1990."],
+ questions:pick(["m7q1","m7q2","m7q3","m7q4","m7q5","m7q8","m7q9"])},
+{id:"post",short:"Post-test",title:"Summary and post-test",mins:25,
+ outcomes:null,
+ content:`<h2>Summary of the SIM</h2>
+ <ul class="plain">
+ <li>If Y<sub>i</sub> is binary, then E(Y|X) = Pr(Y=1|X).</li>
+ <li>Three models: the linear probability model (linear multiple regression), probit (cumulative standard normal) and logit (cumulative standard logistic).</li>
+ <li>LPM, probit and logit all produce predicted probabilities.</li>
+ <li>The effect of ΔX is the change in the conditional probability that Y = 1. For probit and logit it depends on the initial value of X.</li>
+ <li>Probit and logit are estimated by maximum likelihood. Coefficients are normally distributed in large samples, so hypothesis tests and confidence intervals work as usual.</li>
+ </ul>
+ <h2>Post-test</h2>
+ <p>Twelve mixed questions, about 20 minutes. Answer without notes first. When you finish, you'll see your score next to your pre-test score. A score of 75% or more means you have met the learning outcomes; below that, revisit the units listed in your result.</p>`,
+ questions:BANK.find(m=>m.id==="m8").questions}
+];
+UNITS.forEach(u=>u.questions.forEach(q=>{q.mod=u.id;}));
+const MODULES=UNITS;
+const ALLQ=UNITS.flatMap(u=>u.questions);
+const TARGET_MIN=180;
+
+/* ---------- navigation ---------- */
+const main=document.getElementById("main");
+const side=document.getElementById("side");
+let filter="all";
+
+function modStats(m){
+  const total=m.questions.length;let done=0,correct=0;
+  m.questions.forEach(q=>{const a=S.answers[q.id];if(a&&(a.c||a.revealed||q.type!=="num"||a.final)){done++;if(a.c)correct++;}});
+  return {total,done,correct};
+}
+function fmtT(sec){const m=Math.floor(sec/60);return Math.floor(m/60)+":"+String(m%60).padStart(2,"0");}
+function renderNav(){
+  const ul=document.getElementById("modList");const cur=S.last;
+  let html=`<li><button data-go="home" aria-current="${cur==='home'}"><span class="n">·</span><span>Introduction<span class="meta">Overview and how to use this SIM</span></span></button></li>`;
+  UNITS.forEach(u=>{
+    const s=modStats(u);const n=u.id==="pre"?"P":u.id==="post"?"★":u.short.replace("Unit ","");
+    html+=`<li class="${s.done===s.total?'done':''}"><button data-go="${u.id}" aria-current="${cur===u.id}"><span class="n">${s.done===s.total?'✓':n}</span><span>${u.id.startsWith("u")?u.short+": ":""}${u.id.startsWith("u")?u.title:u.title}<span class="meta">${u.mins} min · ${s.done}/${s.total} answered${S.time&&S.time[u.id]?" · "+Math.round(S.time[u.id]/60)+" min spent":""}</span></span></button></li>`;
+  });
+  html+=`<li><button data-go="print" aria-current="${cur==='print'}"><span class="n">⎙</span><span>Printable SIM<span class="meta">Full text, activities and answer key</span></span></button></li>`;
+  html+=`<li><button data-go="record" aria-current="${cur==='record'}"><span class="n">${S.completion?'✓':'✎'}</span><span>My details and completion record<span class="meta">${S.completion?'Completed '+fmtDate(S.completion.completedAt):S.student?esc(S.student.name)+' · '+esc(S.student.studentId):'Not entered yet'}</span></span></button></li>`;
+  if(IS_INSTR)html+=`<li><button data-go="instructor" aria-current="${cur==='instructor'}"><span class="n">⚑</span><span>Instructor: student records<span class="meta">Visible to you only</span></span></button></li>`;
+  ul.innerHTML=html;
+  const t=ALLQ.length,d=UNITS.map(modStats).reduce((a,b)=>a+b.done,0);
+  document.getElementById("overallBar").style.width=(100*d/t)+"%";
+  document.getElementById("overallTxt").textContent=`${d} of ${t} questions answered`;
+  updateTimer();
+}
+document.getElementById("modList").addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(b)go(b.dataset.go);});
+
+function go(id){
+  S.last=id;save();
+  if(id==="home")renderHome();else if(id==="print")renderPrint();else if(id==="record")renderRecord();else if(id==="instructor")renderInstructor();
+  else if(!S.student){const u=UNITS.find(m=>m.id===id);main.innerHTML=`<div class="modhead"><div class="kicker">${u.short}</div><h1>${u.title}</h1></div>`+studentForm(id);wireStudentForm();}
+  else renderModule(UNITS.find(m=>m.id===id));
+  renderNav();
+  side.classList.remove("open");document.getElementById("menuBtn").setAttribute("aria-expanded","false");
+  window.scrollTo(0,0);main.focus({preventScroll:true});
+  document.getElementById("mtopTitle").textContent=id==="home"?"Introduction":id==="print"?"Printable SIM":id==="record"?"Completion record":id==="instructor"?"Student records":UNITS.find(m=>m.id===id).short;
+}
+
+/* ---------- time on task ---------- */
+setInterval(()=>{
+  if(document.visibilityState!=="visible")return;
+  S.time=S.time||{};S.time.total=(S.time.total||0)+15;
+  if(S.last&&S.last!=="home"&&S.last!=="print")S.time[S.last]=(S.time[S.last]||0)+15;
+  save();updateTimer();
+},15000);
+function updateTimer(){
+  const el=document.getElementById("timeTxt");if(!el)return;
+  const t=(S.time&&S.time.total)||0;
+  el.textContent=`Study time ${fmtT(t)} of 3:00`;
+  document.getElementById("timeBar").style.width=Math.min(100,100*t/(TARGET_MIN*60))+"%";
+}
+
+function renderHome(){
+  const nQ=ALLQ.length,nT=ALLQ.filter(q=>q.k==="T").length;
+  main.innerHTML=`
+  <div class="modhead"><div class="kicker">Self-Instructional Material (SIM) · Econometrics · 3 hours</div><h1>Qualitative regression models</h1></div>
+  <p class="lede">Regression with a binary dependent variable: the linear probability model, probit and logit, worked through the Boston mortgage-denial data.</p>
+  <div class="hero-chart">
+    <svg class="chart" id="heroSvg" viewBox="0 0 640 260" role="img" aria-label="LPM straight line crossing above 1 and below 0, while probit and logit S-curves stay between 0 and 1"></svg>
+    <div class="legend"><span><i class="sw" style="background:var(--lpm)"></i>Linear probability model</span><span><i class="sw" style="background:var(--probit)"></i>Probit</span><span><i class="sw" style="background:var(--logit)"></i>Logit</span><span>Dots: simulated 0/1 outcomes</span></div>
+  </div>
+  <p>The straight line runs off the edge of what a probability can be. The S-curves don't. That picture is the whole topic in miniature.</p>
+  <h2>Overview</h2>
+  <p>So far in this course the dependent variable has been continuous. This SIM covers what changes when Y can only be 0 or 1: whether a mortgage is denied, whether a person smokes, whether a student is admitted. You will learn three models for such outcomes, how to compute and interpret their predictions, and how they were used to study racial differences in mortgage lending.</p>
+  <h2>Learning outcomes</h2>
+  <p>By the end of this SIM you should be able to:</p>
+  <ul class="plain">
+    <li>Explain the linear probability model.</li>
+    <li>Discuss probit and logit regression.</li>
+    <li>Analyse probit and logit regression results, including computing predicted probabilities and effects.</li>
+    <li>Interpret qualitative regression models in an applied study.</li>
+  </ul>
+  <h2>Time allocation (3 hours)</h2>
+  <div class="tbl-wrap"><table>
+  <tr><th>Part</th><th>Topic</th><th>Time</th></tr>
+  ${UNITS.map(u=>`<tr><td>${u.short}</td><td>${u.id.startsWith("u")?u.title:u.id==="pre"?"Check your prior knowledge":"Summary and post-test"}</td><td class="num">${u.mins} min</td></tr>`).join("")}
+  <tr><th></th><th>Total</th><th class="num">${UNITS.reduce((a,u)=>a+u.mins,0)} min</th></tr>
+  </table></div>
+  <p class="sp-key">Suggested break: 10 minutes after Unit 2 (not counted in the 3 hours).</p>
+  <h2>How to use this SIM</h2>
+  <ol class="plan">
+    <li>Start with the pre-test. Then work through the units in order; each builds on the one before.</li>
+    <li>Each unit has the same parts: learning outcomes, a "Think about it" question to start, the lesson, hands-on activities, key points, and self-check questions.</li>
+    <li>Self-check questions are tagged <span class="tag T" style="font-family:var(--sans);font-size:13px">Theory</span> or <span class="tag A" style="font-family:var(--sans);font-size:13px">Applied</span>. Type decimals (0.101) unless a question asks for percentage points. For written questions, write your answer first, then compare with the model answer.</li>
+    <li>Use the formula sheet, glossary and Φ calculator in the sidebar whenever you need them. The sidebar also tracks your study time against the 3-hour plan.</li>
+    <li>Finish with the post-test and compare it with your pre-test. Your answers and notes are saved in this browser. For a paper copy, open "Printable SIM".</li>
+    <li>Enter your name, student ID and section before the pre-test. When every part is done, open "My details and completion record" to get your completion record, with a record code, to download or print as proof of completion.</li>
+  </ol>
+  <p class="sp-key">${nQ} questions in total (${nT} theoretical, ${nQ-nT} applied), including the pre-test and post-test.</p>
+  <div class="home-grid">${UNITS.map(u=>{const s=modStats(u);return `<button class="mcard" data-go="${u.id}"><small>${u.short} · ${u.mins} min</small><b>${u.id.startsWith("u")?u.title:u.title}</b><small>${s.done}/${s.total} answered · ${s.correct} correct</small><div class="bar"><i style="width:${100*s.done/s.total}%"></i></div></button>`}).join("")}</div>
+  <div class="pager"><span></span><button class="btn" data-go="pre">Start the pre-test</button></div>`;
+  main.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.go)));
+  drawHero();
+}
+
+function renderModule(m){
+  const idx=UNITS.indexOf(m);
+  const isUnit=m.id.startsWith("u");
+  main.innerHTML=`
+  <div class="modhead"><div class="kicker">${m.short} · about ${m.mins} minutes</div><h1>${m.title}</h1></div>
+  ${m.outcomes?`<div class="box outcomes"><h3>Learning outcomes</h3><p>After this unit you should be able to:</p><ul class="plain">${m.outcomes.map(o=>`<li>${o}</li>`).join("")}</ul></div>`:""}
+  ${m.think?`<div class="box think"><h3>Think about it</h3><p>${m.think}</p><p class="sp-key">Jot down your answer in the notes at the bottom of the page. You'll return to it by the end of the unit.</p></div>`:""}
+  ${m.content}
+  ${m.keypoints?`<div class="box keys"><h3>Key points</h3><ul class="plain">${m.keypoints.map(o=>`<li>${o}</li>`).join("")}</ul></div>`:""}
+  <section class="qset" aria-label="Questions">
+    <div class="qset-head"><h2>${m.id==="pre"?"Pre-test":m.id==="post"?"Post-test questions":"Self-check"}</h2><span class="score" id="score"></span></div>
+    ${isUnit?`<div class="filter"><span>Show:</span>
+      <div class="seg" role="group" aria-label="Filter questions">
+        <button data-f="all" aria-pressed="${filter==='all'}">All</button>
+        <button data-f="T" aria-pressed="${filter==='T'}">Theory</button>
+        <button data-f="A" aria-pressed="${filter==='A'}">Applied</button>
+      </div></div>`:""}
+    <div id="qs"></div>
+    <div class="qactions"><button class="btn ghost" id="resetMod">Reset answers in this part</button></div>
+    <div id="result"></div>
+  </section>
+  <section class="notes">
+    <h3><label for="notes">Your notes</label></h3>
+    <textarea id="notes" placeholder="Your answer to 'Think about it', formulas, mistakes you made, questions for class.">${esc(S.notes[m.id]||"")}</textarea>
+  </section>
+  <div class="pager">
+    ${idx>0?`<button class="btn ghost" data-go="${UNITS[idx-1].id}">Back: ${UNITS[idx-1].short}</button>`:`<button class="btn ghost" data-go="home">Back to introduction</button>`}
+    ${idx<UNITS.length-1?`<button class="btn" data-go="${UNITS[idx+1].id}">Next: ${UNITS[idx+1].short}${UNITS[idx+1].id.startsWith("u")?", "+UNITS[idx+1].title:""}</button>`:`<button class="btn" data-go="home">Back to introduction</button>`}
+  </div>`;
+  main.querySelectorAll(".pager [data-go]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.go)));
+  main.querySelectorAll("[data-f]").forEach(b=>b.addEventListener("click",()=>{filter=b.dataset.f;main.querySelectorAll("[data-f]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.f===filter));renderQs(m);}));
+  document.getElementById("notes").addEventListener("input",e=>{S.notes[m.id]=e.target.value;save();});
+  document.getElementById("resetMod").addEventListener("click",()=>{if(confirm("Clear your answers for this part?")){m.questions.forEach(q=>delete S.answers[q.id]);save();renderQs(m);renderNav();}});
+  mountWidgets(m);
+  renderQs(m);
+}
+function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+/* ---------- questions ---------- */
+function curMod(q){return UNITS.find(x=>x.id===q.mod);}
+function renderQs(m){
+  const wrap=document.getElementById("qs");wrap.innerHTML="";
+  const f=m.id.startsWith("u")?filter:"all";
+  m.questions.forEach((q,i)=>{
+    if(f!=="all"&&q.k!==f)return;
+    const el=document.createElement("div");el.className="q";el.id=q.id;
+    const a=S.answers[q.id];let body="";
+    if(q.type==="mc"){
+      body=`<div class="opts" role="group">${q.opts.map((o,j)=>`<button class="opt" data-j="${j}">${String.fromCharCode(65+j)}. ${o}</button>`).join("")}</div>`;
+    }else if(q.type==="num"){
+      const brief=m.brief;
+      body=`<div class="numrow"><label class="sp-key" for="in-${q.id}">Your answer${q.unit==="pp"?" (percentage points)":""}</label><input id="in-${q.id}" inputmode="decimal" autocomplete="off" placeholder="${q.unit==="pp"?"e.g. 6.1":"e.g. 0.101"}"><button class="btn chk">Check</button>${brief?"":`<button class="btn ghost hint"${q.hint?"":" hidden"}>Hint</button><button class="btn ghost reveal">Show solution</button>`}</div>${brief?"":`<div class="hintbox">${q.hint||""}</div>`}`;
+    }else{
+      body=`<label class="sp-key" for="in-${q.id}">Write your answer, then compare with the model answer.</label><textarea id="in-${q.id}">${esc((a&&a.text)||"")}</textarea><div class="qactions"><button class="btn chk">Show model answer</button></div>`;
+    }
+    el.innerHTML=`<div class="qmeta"><span>Q${i+1}</span><span class="tag ${q.k}">${q.k==="T"?"Theory":"Applied"}</span><span>${q.type==="mc"?"Multiple choice":q.type==="num"?"Calculation":"Written"}</span></div><div class="prompt">${q.q}</div>${body}<div class="fb" aria-live="polite"></div>`;
+    wrap.appendChild(el);wireQ(q,el);if(a)restore(q,el,a);
+  });
+  updateScore(m);
+}
+function setFb(el,cls,html){const fb=el.querySelector(".fb");fb.className="fb show "+cls;fb.innerHTML=html;}
+function record(q,obj){S.answers[q.id]=obj;save();renderNav();updateScore(curMod(q));syncRecord();}
+function explain(q){
+  const m=curMod(q);
+  if(m.brief)return `This is covered in Unit ${q.unit2}.`;
+  return q.ex;
+}
+function wireQ(q,el){
+  const m=curMod(q);
+  if(q.type==="mc"){
+    el.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>{
+      if(S.answers[q.id])return;const j=+b.dataset.j;
+      record(q,{c:j===q.a,pick:j});restore(q,el,S.answers[q.id]);
+    }));
+  }else if(q.type==="num"){
+    const inp=el.querySelector("input");
+    const check=()=>{
+      const v=parseNum(inp.value,q);
+      if(v===null){setFb(el,"info","Enter a number, for example "+(q.unit==="pp"?"6.1":"0.101")+".");return;}
+      const c=[q.ans,...(q.altAns||[])].some(t=>Math.abs(v-t)<=q.tol);
+      const prev=S.answers[q.id];
+      if(c||m.brief){record(q,{c,val:inp.value,final:true});restore(q,el,S.answers[q.id]);return;}
+      const tries=(prev&&!prev.c?prev.tries||0:0)+1;
+      S.answers[q.id]={c:false,val:inp.value,tries};save();
+      el.classList.remove("ok");el.classList.add("no");
+      setFb(el,"no",`<strong>Not quite.</strong> ${tries<2&&q.hint?"Try the hint, then check again.":"Check your arithmetic, or show the solution."}`);
+    };
+    el.querySelector(".chk").addEventListener("click",check);
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter")check();});
+    const h=el.querySelector(".hint");if(h)h.addEventListener("click",()=>el.querySelector(".hintbox").classList.toggle("show"));
+    const r=el.querySelector(".reveal");if(r)r.addEventListener("click",()=>{
+      const prev=S.answers[q.id];
+      if(!prev||!prev.c)record(q,{c:false,val:inp.value,tries:prev?prev.tries:0,revealed:true});
+      restore(q,el,S.answers[q.id],true);
+    });
+  }else{
+    const ta=el.querySelector("textarea");
+    ta.addEventListener("input",()=>{const a=S.answers[q.id];if(a){a.text=ta.value;save();}else{S.open[q.id]=ta.value;save();}});
+    if(!S.answers[q.id]&&S.open[q.id])ta.value=S.open[q.id];
+    el.querySelector(".chk").addEventListener("click",()=>{
+      if(ta.value.trim().length<15){setFb(el,"info","Write at least a sentence or two first. Committing to an answer is what makes the comparison useful.");return;}
+      showModel(q,el);
+    });
+  }
+}
+function showModel(q,el){
+  const a=S.answers[q.id];
+  setFb(el,"info",`<strong>Model answer.</strong> ${q.model}
+   <div class="selfgrade"><span>How did yours compare?</span><button class="btn ghost" data-g="1">Covered the key points</button><button class="btn ghost" data-g="0">Missed something</button></div>`);
+  if(a){const g=el.querySelector(`[data-g="${a.c?1:0}"]`);if(g)g.classList.remove("ghost");}
+  el.querySelectorAll("[data-g]").forEach(b=>b.addEventListener("click",()=>{
+    const c=b.dataset.g==="1";record(q,{c,text:el.querySelector("textarea").value});
+    el.querySelectorAll("[data-g]").forEach(x=>x.classList.add("ghost"));b.classList.remove("ghost");
+    el.classList.toggle("ok",c);el.classList.toggle("no",!c);
+  }));
+}
+function parseNum(s,q){
+  if(!s)return null;s=s.trim().replace(/,/g,"").replace(/−/g,"-");
+  let pct=false;if(/%$/.test(s)){pct=true;s=s.slice(0,-1);}
+  s=s.replace(/pp$/i,"").trim();
+  const v=parseFloat(s);if(isNaN(v))return null;
+  if(q.unit==="pp")return v;
+  return pct?v/100:v;
+}
+function restore(q,el,a,forceReveal){
+  if(q.type==="mc"){
+    el.querySelectorAll(".opt").forEach(b=>{const j=+b.dataset.j;b.disabled=true;if(j===q.a)b.classList.add("right");else if(j===a.pick)b.classList.add("wrong");});
+    el.classList.add(a.c?"ok":"no");
+    setFb(el,a.c?"ok":"no",`<strong>${a.c?"Correct.":"Not quite."}</strong> ${explain(q)}`);
+  }else if(q.type==="num"){
+    const inp=el.querySelector("input");if(a.val!==undefined)inp.value=a.val;
+    const lock=()=>{inp.disabled=true;el.querySelectorAll(".chk,.reveal,.hint").forEach(b=>b.disabled=true);};
+    if(a.c){lock();el.classList.add("ok");el.classList.remove("no");setFb(el,"ok",`<strong>Correct.</strong> ${explain(q)}`);}
+    else if(a.final){lock();el.classList.add("no");setFb(el,"no",`<strong>Not quite.</strong> ${explain(q)}`);}
+    else if(a.revealed||forceReveal){lock();el.classList.add("no");setFb(el,"no",`<strong>Solution.</strong> ${q.ex}`);}
+    else{el.classList.add("no");setFb(el,"no","<strong>Not quite yet.</strong> Try again or show the solution.");}
+  }else{showModel(q,el);el.classList.add(a.c?"ok":"no");}
+}
+function updateScore(m){
+  if(!m)return;
+  const s=modStats(m);const sc=document.getElementById("score");
+  if(sc&&S.last===m.id)sc.textContent=`${s.done}/${s.total} answered · ${s.correct} correct`;
+  const r=document.getElementById("result");if(!r||S.last!==m.id)return;
+  if(m.id==="pre"&&s.done===s.total){
+    const weak=[...new Set(PRE.filter(q=>!(S.answers[q.id]||{}).c).map(q=>q.unit2))];
+    r.innerHTML=`<div class="result-banner"><div class="big">${s.correct}/${s.total}</div><p style="margin-top:8px">Pre-test complete. ${weak.length?"Give extra attention to Unit"+(weak.length>1?"s ":" ")+weak.join(", ")+".":"Strong start. Work through the units anyway: the applied questions go further than the pre-test."}</p><button class="btn" data-go="u1">Start Unit 1</button></div>`;
+    r.querySelector("[data-go]").addEventListener("click",()=>go("u1"));
+  }else if(m.id==="post"&&s.done===s.total){
+    const pct=Math.round(100*s.correct/s.total);const pre=modStats(UNITS[0]);
+    const weak=UNITS.filter(x=>x.id.startsWith("u")).filter(x=>{const t=modStats(x);return t.done&&t.correct/t.done<0.7;}).map(x=>x.short);
+    r.innerHTML=`<div class="result-banner"><div class="big">${pct}%</div><p style="margin-top:8px">${s.correct} of ${s.total} correct on the post-test${pre.done===pre.total?`, compared with ${Math.round(100*pre.correct/pre.total)}% on the pre-test`:""}. ${pct>=75?"You have met the learning outcomes for this SIM.":"Revisit the units below, then reset and retake the post-test."}</p>${weak.length?`<p>Units where you got under 70% of self-check questions right: ${weak.join(", ")}.</p>`:""}<p class="sp-key">Total study time recorded: ${fmtT((S.time&&S.time.total)||0)}</p><button class="btn" id="toRec">${allDone()?"Get your completion record":"See what's left to complete"}</button></div>`;
+    r.querySelector("#toRec").addEventListener("click",()=>go("record"));
+  }else r.innerHTML="";
+}
+
+/* ---------- printable SIM ---------- */
+function stripWidgets(html){return html.replace(/<div data-widget="[^"]*"><\/div>/g,"");}
+function renderPrint(){
+  const L=i=>String.fromCharCode(65+i);
+  const qPrint=(q,i)=>`<div class="pq"><p><b>${i+1}.</b> <span class="sp-key">[${q.k==="T"?"Theory":"Applied"}]</span> ${q.q}</p>${q.type==="mc"?`<ol class="popts">${q.opts.map((o,j)=>`<li>${L(j)}. ${o}</li>`).join("")}</ol>`:`<div class="pline"></div>${q.type==="open"?'<div class="pline"></div><div class="pline"></div>':""}`}</div>`;
+  const key=(q,i)=>{let ans;
+    if(q.type==="mc")ans=`<b>${L(q.a)}</b>. ${q.ex}`;
+    else if(q.type==="num")ans=`<b>${q.unit==="pp"?(+q.ans).toFixed(1)+" pp":(+q.ans<1&&+q.ans>-1?f3(q.ans):+q.ans)}</b>. ${q.ex}`;
+    else ans=`Model answer: ${q.model}`;
+    return `<li>${ans}</li>`;};
+  let h=`<div class="noprint note">This is the complete SIM on one page, ready to print or save as PDF from your browser's print menu. Interactive activities are described as tasks; do them in the online version.<div style="margin-top:10px"><button class="btn" id="doPrint">Print the SIM</button></div></div>
+  <div class="modhead"><div class="kicker">Self-Instructional Material (SIM) · 3 hours</div><h1>Qualitative regression models</h1></div>
+  <h2>Learning outcomes</h2><ul class="plain"><li>Explain the linear probability model.</li><li>Discuss probit and logit regression.</li><li>Analyse probit and logit regression results.</li><li>Interpret qualitative regression models.</li></ul>
+  <h2>Time allocation</h2><div class="tbl-wrap"><table>${UNITS.map(u=>`<tr><td>${u.short}</td><td>${u.title}</td><td class="num">${u.mins} min</td></tr>`).join("")}<tr><th></th><th>Total</th><th class="num">180 min</th></tr></table></div>`;
+  UNITS.forEach(u=>{
+    h+=`<section class="psec"><h1 class="ptitle">${u.short}${u.id.startsWith("u")?": "+u.title:""}</h1><p class="sp-key">About ${u.mins} minutes</p>`;
+    if(u.outcomes)h+=`<div class="box outcomes"><h3>Learning outcomes</h3><ul class="plain">${u.outcomes.map(o=>`<li>${o}</li>`).join("")}</ul></div>`;
+    if(u.think)h+=`<div class="box think"><h3>Think about it</h3><p>${u.think}</p></div>`;
+    h+=u.id==="pre"?u.content:stripWidgets(u.content).replace(/<div id="cellInfo"[^>]*><\/div>/,"");
+    if(u.id==="u5")h+=`<p class="sp-key">Table 11.2 coefficients are available in the online version (Activity 5.1) and in the textbook.</p>`;
+    if(u.activities)Object.values(u.activities).forEach(a=>{h+=`<div class="box act"><h3>${a.title}</h3><p class="sp-key">Use the interactive tool in the online SIM.</p><ol>${a.tasks.map(t=>`<li>${t}</li>`).join("")}</ol></div>`;});
+    if(u.keypoints)h+=`<div class="box keys"><h3>Key points</h3><ul class="plain">${u.keypoints.map(o=>`<li>${o}</li>`).join("")}</ul></div>`;
+    h+=`<h2>${u.id==="pre"?"Pre-test":u.id==="post"?"Post-test":"Self-check"}</h2>${u.questions.map(qPrint).join("")}</section>`;
+  });
+  h+=`<section class="psec"><h1 class="ptitle">Answer key</h1>${UNITS.map(u=>`<h3>${u.short}${u.id.startsWith("u")?" self-check":""}</h3><ol class="akey">${u.questions.map(key).join("")}</ol>`).join("")}</section>
+  <section class="psec"><h1 class="ptitle">Glossary</h1>${GLOSS}</section>
+  <section class="psec"><h1 class="ptitle">References</h1><p>Stock, J. H., &amp; Watson, M. W. (2019). <i>Introduction to Econometrics</i> (4th ed., Global Edition), Chapter 11: Regression with a Binary Dependent Variable. Pearson Education.</p><p>Munnell, A. H., Tootell, G. M. B., Browne, L. E., &amp; McEneaney, J. (1996). Mortgage lending in Boston: Interpreting HMDA data. <i>American Economic Review</i>, 86(1), 25–53.</p><p class="sp-key">Please check these citations against your course reading list.</p></section>`;
+  main.innerHTML=h;
+  document.getElementById("doPrint").addEventListener("click",()=>{try{window.print();}catch(e){}});
+}
+const GLOSS=`<dl class="gloss">
+<dt>Binary (dummy) variable</dt><dd>A variable that takes only the values 0 and 1.</dd>
+<dt>Linear probability model (LPM)</dt><dd>A linear regression with a binary dependent variable; the fitted value is a predicted probability.</dd>
+<dt>Probit</dt><dd>A model with Pr(Y=1|X) = Φ(β₀ + β₁X), where Φ is the standard normal CDF.</dd>
+<dt>Logit</dt><dd>A model with Pr(Y=1|X) = 1/(1 + e^−(β₀+β₁X)), the standard logistic CDF.</dd>
+<dt>z-index</dt><dd>The linear combination β₀ + β₁X + … inside Φ or F.</dd>
+<dt>Cumulative distribution function (CDF)</dt><dd>The probability that a random variable is less than or equal to a value; S-shaped, from 0 to 1.</dd>
+<dt>Percentage point (pp)</dt><dd>The unit of a difference between two percentages: 10% to 16% is a 6 pp increase.</dd>
+<dt>Maximum likelihood estimation (MLE)</dt><dd>Choosing coefficients that make the observed sample most probable.</dd>
+<dt>Pseudo-R²</dt><dd>1 − ln f_max / ln f₀: improvement in the log likelihood over an intercept-only model.</dd>
+<dt>Fraction correctly predicted</dt><dd>Share of observations where p̂ &gt; 0.5 and Y = 1, or p̂ &lt; 0.5 and Y = 0.</dd>
+<dt>Omitted variable bias</dt><dd>Bias from leaving out a variable that affects Y and is correlated with an included regressor.</dd>
+<dt>P/I ratio</dt><dd>Total monthly debt payments divided by total monthly income.</dd>
+<dt>HMDA</dt><dd>Home Mortgage Disclosure Act; the Boston Fed data set of 2,380 mortgage applications from 1990.</dd>
+</dl>`;
+
+/* ---------- SVG helpers ---------- */
+function svgEl(tag,attrs,parent){const e=document.createElementNS("http://www.w3.org/2000/svg",tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+function frame(svg,W,H,pad,xr,yr,xt,yt,xlab,ylab){
+  svg.innerHTML="";
+  const sx=x=>pad.l+(x-xr[0])/(xr[1]-xr[0])*(W-pad.l-pad.r);
+  const sy=y=>H-pad.b-(y-yr[0])/(yr[1]-yr[0])*(H-pad.t-pad.b);
+  yt.forEach(v=>{svgEl("line",{x1:pad.l,x2:W-pad.r,y1:sy(v),y2:sy(v),stroke:"var(--rule)","stroke-width":v===0||v===1?1.2:.6,"stroke-dasharray":v===0||v===1?"":"3 4"},svg);
+    const t=svgEl("text",{x:pad.l-6,y:sy(v)+4,"text-anchor":"end"},svg);t.textContent=v;});
+  xt.forEach(v=>{const t=svgEl("text",{x:sx(v),y:H-pad.b+16,"text-anchor":"middle"},svg);t.textContent=v;});
+  if(xlab){const t=svgEl("text",{x:(pad.l+W-pad.r)/2,y:H-4,"text-anchor":"middle"},svg);t.textContent=xlab;}
+  if(ylab){const t=svgEl("text",{x:12,y:pad.t-6},svg);t.textContent=ylab;}
+  return {sx,sy};
+}
+function curve(svg,f,xr,sx,sy,color,yclip,dash){
+  let d="";const n=160;
+  for(let i=0;i<=n;i++){const x=xr[0]+(xr[1]-xr[0])*i/n;let y=f(x);if(yclip)y=Math.max(yclip[0],Math.min(yclip[1],y));d+=(i?"L":"M")+sx(x).toFixed(1)+","+sy(y).toFixed(1);}
+  return svgEl("path",{d,fill:"none",stroke:color,"stroke-width":2.5,"stroke-dasharray":dash||""},svg);
+}
+
+function drawHero(){
+  const svg=document.getElementById("heroSvg");if(!svg)return;
+  const W=640,H=260,pad={l:40,r:16,t:20,b:34};
+  const xr=[-0.2,1.4],yr=[-0.25,1.25];
+  const {sx,sy}=frame(svg,W,H,pad,xr,yr,[0,0.4,0.8,1.2],[0,0.5,1],"X","Pr(Y = 1 | X)");
+  // shaded impossible regions
+  svgEl("rect",{x:pad.l,y:sy(1.25),width:W-pad.l-pad.r,height:sy(1)-sy(1.25),fill:"var(--bad)",opacity:.07},svg);
+  svgEl("rect",{x:pad.l,y:sy(0),width:W-pad.l-pad.r,height:sy(-0.25)-sy(0),fill:"var(--bad)",opacity:.07},svg);
+  // simulated points (deterministic)
+  let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
+  for(let i=0;i<70;i++){const x=xr[0]+0.05+rnd()*1.5;const p=Phi(-2.6+4.4*x);const y=rnd()<p?1:0;
+    svgEl("circle",{cx:sx(x),cy:sy(y)+(rnd()-0.5)*8,r:3,fill:"var(--ink-2)",opacity:.35},svg);}
+  curve(svg,x=>-0.3+1.1*x,[0.05,1.4],sx,sy,"var(--lpm)");
+  curve(svg,x=>Phi(-2.6+4.4*x),xr,sx,sy,"var(--probit)");
+  curve(svg,x=>Lgt(1.7*(-2.6+4.4*x)),xr,sx,sy,"var(--logit)",null,"6 4");
+  const t1=svgEl("text",{x:sx(1.36),y:sy(1.13),"text-anchor":"end",fill:"var(--bad)"},svg);t1.textContent="probability > 1?";
+  const t2=svgEl("text",{x:sx(-0.17),y:sy(-0.13)},svg);t2.textContent="probability < 0?";t2.setAttribute("style","fill:var(--bad)");
+  t1.setAttribute("style","fill:var(--bad)");
+}
+
+/* ---------- widgets ---------- */
+function mountWidgets(m){
+  main.querySelectorAll("[data-widget]").forEach(w=>{
+    const k=w.dataset.widget;
+    const act=m&&m.activities&&m.activities[k];
+    if(act){const b=document.createElement("div");b.className="box act";b.innerHTML=`<h3>${act.title}</h3><ol>${act.tasks.map(t=>`<li>${t}</li>`).join("")}</ol>`;w.parentNode.insertBefore(b,w);}
+    ({lpm:wLPM,normal:wNormal,compare:wCompare,lab:wLab,fit:wFit,table112:wTable}[k])(w);
+  });
+}
+function wLPM(w){
+  w.className="widget";
+  w.innerHTML=`<h4>LPM calculator</h4><p class="wsub">Move the P/I ratio and the race indicator. Watch what happens beyond P/I ≈ 1.8 or below 0.13.</p>
+  <div class="seg" role="group" aria-label="Model"><button data-m="1" aria-pressed="true">P/I only</button><button data-m="2" aria-pressed="false">P/I + black</button></div>
+  <div class="controls"><div class="ctl"><label for="lpmx">P/I ratio <b id="lpmxv"></b></label><input type="range" id="lpmx" min="0" max="2.5" step="0.01" value="0.3"></div>
+  <div class="ctl" id="blkWrap" hidden><label for="lpmb">Applicant <b id="lpmbv"></b></label><input type="range" id="lpmb" min="0" max="1" step="1" value="1"></div></div>
+  <svg class="chart" viewBox="0 0 640 240" role="img" aria-label="LPM fitted line with the current prediction marked"></svg>
+  <div class="readout" id="lpmOut"></div>`;
+  let mode=1;const svg=w.querySelector("svg");
+  const upd=()=>{
+    const x=+w.querySelector("#lpmx").value,b=+w.querySelector("#lpmb").value;
+    w.querySelector("#lpmxv").textContent=x.toFixed(2);w.querySelector("#lpmbv").textContent=b?"black":"white";
+    const f=mode===1?(v=>-0.080+0.604*v):(v=>-0.091+0.559*v+0.177*b);
+    const W=640,H=240,pad={l:40,r:16,t:20,b:34},xr=[0,2.5],yr=[-0.2,1.4];
+    const {sx,sy}=frame(svg,W,H,pad,xr,yr,[0,0.5,1,1.5,2,2.5],[0,0.5,1],"P/I ratio","Predicted Pr(deny)");
+    svgEl("rect",{x:pad.l,y:sy(1.4),width:W-pad.l-pad.r,height:sy(1)-sy(1.4),fill:"var(--bad)",opacity:.07},svg);
+    svgEl("rect",{x:pad.l,y:sy(0),width:W-pad.l-pad.r,height:sy(-0.2)-sy(0),fill:"var(--bad)",opacity:.07},svg);
+    curve(svg,f,xr,sx,sy,"var(--lpm)");
+    if(mode===2)curve(svg,v=>-0.091+0.559*v+0.177*(1-b),xr,sx,sy,"var(--ink-2)",null,"4 4");
+    const p=f(x);
+    svgEl("line",{x1:sx(x),x2:sx(x),y1:sy(yr[0]),y2:sy(Math.max(yr[0],Math.min(yr[1],p))),stroke:"var(--ink-2)","stroke-dasharray":"2 3"},svg);
+    svgEl("circle",{cx:sx(x),cy:sy(Math.max(yr[0],Math.min(yr[1],p))),r:6,fill:"var(--lpm)",stroke:"var(--panel)","stroke-width":2},svg);
+    const out=p<0||p>1;
+    const eq=mode===1?`−0.080 + 0.604 × ${x.toFixed(2)}`:`−0.091 + 0.559 × ${x.toFixed(2)} + 0.177 × ${b}`;
+    w.querySelector("#lpmOut").innerHTML=`<span class="chip">Pr(deny) = ${eq} = <b>${f3(p)}</b></span><span class="chip">Effect of +0.1 in P/I: <b>${pp(mode===1?0.0604:0.0559)}</b> (same everywhere)</span>${mode===2?`<span class="chip">Race gap: <b>17.7 pp</b> at every P/I</span>`:""}${out?`<span class="chip warn">Not a valid probability</span>`:""}`;
+  };
+  w.querySelectorAll("[data-m]").forEach(b=>b.addEventListener("click",()=>{mode=+b.dataset.m;w.querySelectorAll("[data-m]").forEach(x=>x.setAttribute("aria-pressed",x===b));w.querySelector("#blkWrap").hidden=mode===1;upd();}));
+  w.querySelectorAll("input").forEach(i=>i.addEventListener("input",upd));upd();
+}
+function wNormal(w){
+  w.className="widget";
+  w.innerHTML=`<h4>Probit: from index to probability</h4><p class="wsub">Set the coefficients and X. The shaded area under the standard normal density is Φ(z), the predicted probability.</p>
+  <div class="controls">
+    <div class="ctl"><label for="nb0">β₀ <b id="nb0v"></b></label><input type="range" id="nb0" min="-4" max="2" step="0.01" value="-2"></div>
+    <div class="ctl"><label for="nb1">β₁ <b id="nb1v"></b></label><input type="range" id="nb1" min="-4" max="6" step="0.01" value="3"></div>
+    <div class="ctl"><label for="nx">X <b id="nxv"></b></label><input type="range" id="nx" min="0" max="1.5" step="0.01" value="0.4"></div>
+  </div>
+  <svg class="chart" viewBox="0 0 640 220" role="img" aria-label="Standard normal density with area to the left of z shaded"></svg>
+  <div class="readout" id="nOut"></div>`;
+  const svg=w.querySelector("svg");
+  const upd=()=>{
+    const b0=+w.querySelector("#nb0").value,b1=+w.querySelector("#nb1").value,x=+w.querySelector("#nx").value;
+    w.querySelector("#nb0v").textContent=b0.toFixed(2);w.querySelector("#nb1v").textContent=b1.toFixed(2);w.querySelector("#nxv").textContent=x.toFixed(2);
+    const z=b0+b1*x;const zc=Math.max(-3.8,Math.min(3.8,z));
+    const W=640,H=220,pad={l:40,r:16,t:16,b:34},xr=[-4,4],yr=[0,0.42];
+    const {sx,sy}=frame(svg,W,H,pad,xr,yr,[-3,-2,-1,0,1,2,3],[0,0.2,0.4],"z","density φ(z)");
+    let d=`M${sx(-4)},${sy(0)}`;for(let i=0;i<=120;i++){const t=-4+(zc+4)*i/120;d+=`L${sx(t)},${sy(phi(t))}`;}d+=`L${sx(zc)},${sy(0)}Z`;
+    svgEl("path",{d,fill:"var(--probit)",opacity:.22},svg);
+    curve(svg,phi,xr,sx,sy,"var(--probit)");
+    svgEl("line",{x1:sx(zc),x2:sx(zc),y1:sy(0),y2:sy(0.41),stroke:"var(--ink)","stroke-width":1.5},svg);
+    const t=svgEl("text",{x:sx(zc)+6,y:sy(0.38)},svg);t.textContent="z = "+z.toFixed(2);t.setAttribute("style","fill:var(--ink);font-weight:600");
+    w.querySelector("#nOut").innerHTML=`<span class="chip">z = ${b0.toFixed(2)} + ${b1.toFixed(2)} × ${x.toFixed(2)} = <b>${z.toFixed(3)}</b></span><span class="chip">Pr(Y=1|X) = Φ(z) = <b>${f4(Phi(z))}</b></span>`;
+  };
+  w.querySelectorAll("input").forEach(i=>i.addEventListener("input",upd));upd();
+}
+const PRESETS={
+  white:{label:"HMDA, white applicant",lpm:[-0.091,0.559],probit:[-2.258738,2.741637],logit:[-4.125558,5.370362]},
+  black:{label:"HMDA, black applicant",lpm:[-0.091+0.177,0.559],probit:[-2.258738+0.7081579,2.741637],logit:[-4.125558+1.272782,5.370362]}
+};
+function wCompare(w){
+  w.className="widget";
+  w.innerHTML=`<h4>Probit vs logit vs LPM on the HMDA data</h4><p class="wsub">Fitted with P/I ratio and black. Coefficients differ a lot; predicted probabilities barely do (until P/I gets large).</p>
+  <div class="seg" role="group" aria-label="Applicant"><button data-p="white" aria-pressed="true">White applicant</button><button data-p="black" aria-pressed="false">Black applicant</button></div>
+  <div class="controls"><div class="ctl"><label for="cpx">P/I ratio <b id="cpxv"></b></label><input type="range" id="cpx" min="0" max="2" step="0.01" value="0.3"></div></div>
+  <svg class="chart" viewBox="0 0 640 240" role="img" aria-label="Three fitted probability curves"></svg>
+  <div class="legend"><span><i class="sw" style="background:var(--lpm)"></i>LPM</span><span><i class="sw" style="background:var(--probit)"></i>Probit</span><span><i class="sw" style="background:var(--logit)"></i>Logit</span></div>
+  <div class="readout" id="cpOut"></div>`;
+  let pr="white";const svg=w.querySelector("svg");
+  const upd=()=>{
+    const P=PRESETS[pr],x=+w.querySelector("#cpx").value;w.querySelector("#cpxv").textContent=x.toFixed(2);
+    const fl=v=>P.lpm[0]+P.lpm[1]*v,fp=v=>Phi(P.probit[0]+P.probit[1]*v),fg=v=>Lgt(P.logit[0]+P.logit[1]*v);
+    const W=640,H=240,pad={l:40,r:16,t:20,b:34},xr=[0,2],yr=[-0.1,1.1];
+    const {sx,sy}=frame(svg,W,H,pad,xr,yr,[0,0.5,1,1.5,2],[0,0.5,1],"P/I ratio","Pr(deny)");
+    curve(svg,fl,xr,sx,sy,"var(--lpm)",[-0.1,1.1]);curve(svg,fp,xr,sx,sy,"var(--probit)");curve(svg,fg,xr,sx,sy,"var(--logit)",null,"6 4");
+    svgEl("line",{x1:sx(x),x2:sx(x),y1:sy(-0.1),y2:sy(1.1),stroke:"var(--ink-2)","stroke-dasharray":"2 3"},svg);
+    w.querySelector("#cpOut").innerHTML=`<span class="chip"><i class="sw" style="background:var(--lpm)"></i>LPM <b>${f3(fl(x))}</b></span><span class="chip"><i class="sw" style="background:var(--probit)"></i>Probit <b>${f3(fp(x))}</b></span><span class="chip"><i class="sw" style="background:var(--logit)"></i>Logit <b>${f3(fg(x))}</b></span>`;
+  };
+  w.querySelectorAll("[data-p]").forEach(b=>b.addEventListener("click",()=>{pr=b.dataset.p;w.querySelectorAll("[data-p]").forEach(x=>x.setAttribute("aria-pressed",x===b));upd();}));
+  w.querySelector("input").addEventListener("input",upd);upd();
+}
+function wLab(w){
+  w.className="widget";
+  w.innerHTML=`<h4>Curve lab: the effect of the same ΔX at different starting points</h4><p class="wsub">Choose a starting P/I and a step. The vertical bars show the change in predicted probability under each model.</p>
+  <div class="seg" role="group" aria-label="Applicant"><button data-p="white" aria-pressed="true">White applicant</button><button data-p="black" aria-pressed="false">Black applicant</button></div>
+  <div class="controls">
+    <div class="ctl"><label for="lx">Starting P/I <b id="lxv"></b></label><input type="range" id="lx" min="0" max="1.6" step="0.01" value="0.3"></div>
+    <div class="ctl"><label for="ld">Increase ΔP/I <b id="ldv"></b></label><input type="range" id="ld" min="0.05" max="0.4" step="0.01" value="0.1"></div>
+  </div>
+  <svg class="chart" viewBox="0 0 640 260" role="img" aria-label="Probability curves with the change over the chosen step highlighted"></svg>
+  <div class="readout" id="lOut"></div>`;
+  let pr="white";const svg=w.querySelector("svg");
+  const upd=()=>{
+    const P=PRESETS[pr],x=+w.querySelector("#lx").value,dx=+w.querySelector("#ld").value;
+    w.querySelector("#lxv").textContent=x.toFixed(2);w.querySelector("#ldv").textContent=dx.toFixed(2);
+    const fl=v=>P.lpm[0]+P.lpm[1]*v,fp=v=>Phi(P.probit[0]+P.probit[1]*v),fg=v=>Lgt(P.logit[0]+P.logit[1]*v);
+    const W=640,H=260,pad={l:40,r:16,t:20,b:34},xr=[0,2],yr=[-0.1,1.1];
+    const {sx,sy}=frame(svg,W,H,pad,xr,yr,[0,0.5,1,1.5,2],[0,0.5,1],"P/I ratio","Pr(deny)");
+    svgEl("rect",{x:sx(x),y:sy(1.1),width:sx(x+dx)-sx(x),height:sy(-0.1)-sy(1.1),fill:"var(--hl)"},svg);
+    curve(svg,fl,xr,sx,sy,"var(--lpm)",[-0.1,1.1]);curve(svg,fp,xr,sx,sy,"var(--probit)");curve(svg,fg,xr,sx,sy,"var(--logit)",null,"6 4");
+    [[fl,"var(--lpm)",-4],[fp,"var(--probit)",0],[fg,"var(--logit)",4]].forEach(([f,c,o])=>{
+      const a=Math.max(-0.1,Math.min(1.1,f(x))),b=Math.max(-0.1,Math.min(1.1,f(x+dx)));
+      svgEl("line",{x1:sx(x+dx)+o,x2:sx(x+dx)+o,y1:sy(a),y2:sy(b),stroke:c,"stroke-width":4},svg);
+    });
+    const d=f=>f(x+dx)-f(x);
+    w.querySelector("#lOut").innerHTML=`<span class="chip"><i class="sw" style="background:var(--lpm)"></i>LPM: ${f3(fl(x))} → ${f3(fl(x+dx))}, <b>${pp(d(fl))}</b></span><span class="chip"><i class="sw" style="background:var(--probit)"></i>Probit: ${f3(fp(x))} → ${f3(fp(x+dx))}, <b>${pp(d(fp))}</b></span><span class="chip"><i class="sw" style="background:var(--logit)"></i>Logit: ${f3(fg(x))} → ${f3(fg(x+dx))}, <b>${pp(d(fg))}</b></span>`;
+  };
+  w.querySelectorAll("[data-p]").forEach(b=>b.addEventListener("click",()=>{pr=b.dataset.p;w.querySelectorAll("[data-p]").forEach(x=>x.setAttribute("aria-pressed",x===b));upd();}));
+  w.querySelectorAll("input").forEach(i=>i.addEventListener("input",upd));upd();
+}
+function wFit(w){
+  w.className="widget";
+  const pi=[0.18,0.22,0.27,0.31,0.33,0.36,0.41,0.48,0.55,0.62,0.71,0.85];
+  const y =[0,0,0,1,0,0,0,1,0,1,1,0];
+  w.innerHTML=`<h4>Fraction correctly predicted, by hand</h4><p class="wsub">Twelve hypothetical applicants with predicted probabilities from the probit Φ(−2.194 + 2.968 P/I). Move the cutoff to see how the classification and the score change. The convention is 0.5.</p>
+  <div class="controls"><div class="ctl"><label for="ct">Cutoff <b id="ctv"></b></label><input type="range" id="ct" min="0.05" max="0.95" step="0.01" value="0.5"></div></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Applicant</th><th>P/I</th><th>p̂</th><th>Predicted</th><th>Actual deny</th><th>Correct?</th></tr></thead><tbody id="ftb"></tbody></table></div>
+  <div class="readout" id="fOut"></div>`;
+  const upd=()=>{
+    const c=+w.querySelector("#ct").value;w.querySelector("#ctv").textContent=c.toFixed(2);
+    let ok=0,rows="";
+    pi.forEach((v,i)=>{const p=Phi(-2.194159+2.967908*v);const pred=p>c?1:0;const r=pred===y[i];if(r)ok++;
+      rows+=`<tr><td>${i+1}</td><td class="num">${v.toFixed(2)}</td><td class="num">${f3(p)}</td><td class="num">${pred}</td><td class="num">${y[i]}</td><td class="num" style="color:${r?"var(--good)":"var(--bad)"}">${r?"yes":"no"}</td></tr>`;});
+    w.querySelector("#ftb").innerHTML=rows;
+    const allZero=y.filter(v=>v===0).length;
+    w.querySelector("#fOut").innerHTML=`<span class="chip">Fraction correctly predicted: <b>${ok}/12 = ${f3(ok/12)}</b></span><span class="chip">Always predicting "accept": ${allZero}/12 = ${f3(allZero/12)}</span>`;
+  };
+  w.querySelector("input").addEventListener("input",upd);upd();
+}
+const T112={
+  cols:["(1) LPM","(2) Logit","(3) Probit","(4) Probit","(5) Probit","(6) Probit"],
+  model:["LPM","Logit","Probit","Probit","Probit","Probit"],
+  rows:[
+   ["black",["0.084**","0.023"],["0.688**","0.182"],["0.389**","0.098"],["0.371**","0.099"],["0.363**","0.100"],["0.246","0.448"]],
+   ["P/I ratio",["0.449**","0.114"],["4.76**","1.33"],["2.44**","0.61"],["2.46**","0.60"],["2.62**","0.61"],["2.57**","0.66"]],
+   ["housing expense-to-income ratio",["−0.048","0.110"],["−0.11","1.29"],["−0.18","0.68"],["−0.30","0.68"],["−0.50","0.70"],["−0.54","0.74"]],
+   ["medium loan-to-value (0.80–0.95)",["0.031*","0.013"],["0.46**","0.16"],["0.21**","0.08"],["0.22**","0.08"],["0.22**","0.08"],["0.22**","0.08"]],
+   ["high loan-to-value (&gt; 0.95)",["0.189**","0.050"],["1.49**","0.32"],["0.79**","0.18"],["0.79**","0.18"],["0.84**","0.18"],["0.79**","0.18"]],
+   ["consumer credit score",["0.031**","0.005"],["0.29**","0.04"],["0.15**","0.02"],["0.16**","0.02"],["0.34**","0.11"],["0.16**","0.02"]],
+   ["mortgage credit score",["0.021","0.011"],["0.28*","0.14"],["0.15*","0.07"],["0.11","0.08"],["0.16","0.10"],["0.11","0.08"]],
+   ["public bad credit record",["0.197**","0.035"],["1.23**","0.20"],["0.70**","0.12"],["0.70**","0.12"],["0.72**","0.12"],["0.70**","0.12"]],
+   ["denied mortgage insurance",["0.702**","0.045"],["4.55**","0.57"],["2.56**","0.30"],["2.59**","0.29"],["2.59**","0.30"],["2.59**","0.29"]],
+   ["self-employed",["0.060**","0.021"],["0.67**","0.21"],["0.36**","0.11"],["0.35**","0.11"],["0.34**","0.11"],["0.35**","0.11"]],
+   ["single",null,null,null,["0.23**","0.08"],["0.23**","0.08"],["0.23**","0.08"]],
+   ["high school diploma",null,null,null,["−0.61**","0.23"],["−0.60*","0.24"],["−0.62**","0.23"]],
+   ["unemployment rate",null,null,null,["0.03","0.02"],["0.03","0.02"],["0.03","0.02"]],
+   ["condominium",null,null,null,null,["−0.05","0.09"],null],
+   ["black × P/I ratio",null,null,null,null,null,["−0.58","1.47"]],
+   ["black × housing expense-to-income",null,null,null,null,null,["1.23","1.69"]],
+   ["additional credit rating indicators","no","no","no","no","yes","no"],
+   ["constant",["−0.183**","0.028"],["−5.71**","0.48"],["−3.04**","0.23"],["−2.57**","0.34"],["−2.90**","0.39"],["−2.54**","0.35"]]
+  ]};
+function wTable(w){
+  let h=`<div class="tbl-wrap"><table><thead><tr><th>Regressor</th>${T112.cols.map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>`;
+  T112.rows.forEach((r,ri)=>{h+=`<tr><td>${r[0]}</td>`;for(let c=1;c<=6;c++){const v=r[c];
+    if(v===null)h+=`<td class="num"></td>`;else if(typeof v==="string")h+=`<td class="num">${v}</td>`;
+    else h+=`<td class="num cell" tabindex="0" role="button" data-r="${ri}" data-c="${c}">${v[0]}<br><span class="sp-key">(${v[1]})</span></td>`;}
+    h+=`</tr>`;});
+  h+=`</tbody></table></div><p class="sp-key">Dependent variable: deny = 1 if denied, 0 if accepted; n = 2,380. LPM by OLS; logit and probit by maximum likelihood.</p>`;
+  w.innerHTML=h;
+  const info=document.getElementById("cellInfo");
+  const show=td=>{
+    w.querySelectorAll(".cell").forEach(x=>x.classList.remove("sel"));td.classList.add("sel");
+    const r=T112.rows[+td.dataset.r],c=+td.dataset.c,[b,se]=r[c];const bn=parseFloat(b.replace("−","-")),sen=parseFloat(se);
+    const t=bn/sen,mod=T112.model[c-1];
+    const sig=Math.abs(t)>2.58?"significant at 1%":Math.abs(t)>1.96?"significant at 5%":"not significant at 5%";
+    const name=r[0].replace("&gt;",">");
+    let interp;
+    if(r[0]==="constant")interp="The intercept: the index (or probability, for the LPM) when all regressors are zero. Rarely meaningful on its own.";
+    else if(mod==="LPM")interp=`Holding the other regressors fixed, a one-unit increase in ${name} changes the probability of denial by ${(bn*100).toFixed(1)} percentage points.`;
+    else interp=`Holding the other regressors fixed, a one-unit increase in ${name} changes the ${mod.toLowerCase()} index by ${bn}. The ${bn>0?"positive":"negative"} sign means denial probability ${bn>0?"rises":"falls"}; the size of the probability change depends on the applicant's other characteristics.`;
+    info.style.display="block";
+    info.innerHTML=`<b>${name}, column ${T112.cols[c-1]}</b><br>t = ${b} / ${se} = <b>${t.toFixed(2)}</b>, ${sig}.<br>${interp}`;
+  };
+  w.querySelectorAll(".cell").forEach(td=>{td.addEventListener("click",()=>show(td));td.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();show(td);}});});
+}
+
+/* ---------- drawers & calculator ---------- */
+document.querySelectorAll("[data-open]").forEach(b=>b.addEventListener("click",()=>{const d=document.getElementById("drawer-"+b.dataset.open);d.classList.add("open");d.querySelector("[data-close]").focus();}));
+document.querySelectorAll(".drawer").forEach(d=>{d.addEventListener("click",e=>{if(e.target===d||e.target.closest("[data-close]"))d.classList.remove("open");});});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".drawer.open").forEach(d=>d.classList.remove("open"));});
+function calc(){
+  const z=parseFloat(document.getElementById("cz").value);
+  const o=document.getElementById("calcOut");
+  if(isNaN(z)){o.innerHTML=`<span class="chip">Enter a number for z.</span>`;return;}
+  o.innerHTML=`<span class="chip">Φ(z) = <b>${f4(Phi(z))}</b></span><span class="chip">F(z) logistic = <b>${f4(Lgt(z))}</b></span><span class="chip">φ(z) density = <b>${f4(phi(z))}</b></span>`;
+}
+document.querySelectorAll(".calcin").forEach(i=>i.addEventListener("input",calc));
+document.getElementById("useZ").addEventListener("click",()=>{
+  const g=id=>parseFloat(document.getElementById(id).value)||0;
+  document.getElementById("cz").value=(g("cb0")+g("cb1")*g("cx1")+g("cb2")*g("cx2")).toFixed(4);calc();
+});
+calc();
+
+/* ---------- student records ---------- */
+/* ===== SUPABASE SETTINGS: fill these two values, then upload index.html =====
+   url: Project Settings > API > Project URL      e.g. "https://abcd1234.supabase.co"
+   key: Project Settings > API > anon / publishable key (safe to put in a web page)
+   Leave both empty to keep progress in the browser only. */
+const SUPABASE={url:"https://dafapzuxavfsuinyclus.supabase.co",key:"sb_publishable_DsFOHw-ngrxcNfOHzs04HA_h4Auq0Fo"};
+/* ========================================================================== */
+const SB_ON=!!(SUPABASE.url&&SUPABASE.key)&&!(window.claude&&window.claude.use);
+let SB_STATE=null,SB_ERR=""; /* null | "ok" | "error" */
+const SB_CONFIGURED=!!(SUPABASE.url&&SUPABASE.key);
+let DB=null,USER=null,DL=null,UID=null,IS_INSTR=false,CAN_SUBMIT=null,SUBS=null,subUnsub=null;
+const PARTS=()=>UNITS.map(u=>({u,s:modStats(u)}));
+function allDone(){return PARTS().every(p=>p.s.done===p.s.total);}
+function pct(s){return s.total?Math.round(100*s.correct/s.total):0;}
+function hashStr(str){let h=2166136261>>>0;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h.toString(36).toUpperCase().padStart(7,"0");}
+function codeFor(r){return "QRM-"+hashStr([r.name,r.studentId,r.section,r.completedAt,r.prePct,r.postPct,r.minutes].join("|")).slice(0,7);}
+function fmtDate(iso){try{return new Date(iso).toLocaleString(undefined,{year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});}catch(e){return iso;}}
+
+function buildSummary(){
+  const st=S.student||{};const parts={};
+  PARTS().forEach(({u,s})=>{parts[u.id]={answered:s.done,total:s.total,correct:s.correct,minutes:Math.round(((S.time||{})[u.id]||0)/60)};});
+  const pre=modStats(UNITS[0]),post=modStats(UNITS[UNITS.length-1]);
+  return {name:st.name||"",studentId:st.studentId||"",section:st.section||"",email:st.email||"",
+    registeredAt:st.registeredAt||"",prePct:pct(pre),postPct:pct(post),
+    minutes:Math.round(((S.time||{}).total||0)/60),parts,
+    status:allDone()?"completed":"in progress"};
+}
+
+/* online sync (only on claude.ai, when the viewer may write) */
+let lastSync="";
+function randToken(n){const a=new Uint8Array(n);crypto.getRandomValues(a);return Array.from(a,b=>b.toString(16).padStart(2,"0")).join("");}
+function sbIds(){
+  if(!S.sb){const id=(crypto.randomUUID?crypto.randomUUID():randToken(16).replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/,"$1-$2-$3-$4-$5"));S.sb={recordId:id,writeKey:randToken(24)};save();}
+  return S.sb;
+}
+function sbPayload(){
+  const r=buildSummary();if(S.completion)Object.assign(r,{completedAt:S.completion.completedAt,code:S.completion.code,status:"completed"});
+  const ans={};ALLQ.forEach(q=>{const a=S.answers[q.id];if(a&&(a.c||a.revealed||a.final||q.type!=="num"))ans[q.id]=a.c?1:0;});
+  r.answers=ans;r.answered=Object.keys(ans).length;r.totalQuestions=ALLQ.length;r.correct=Object.values(ans).reduce((x,y)=>x+y,0);
+  return r;
+}
+let sbTimer=null,sbLast="",sbBusy=false;
+function sbSync(force,keepalive){
+  if(!SB_ON||!S.student)return;
+  clearTimeout(sbTimer);
+  const run=async()=>{
+    if(sbBusy){sbTimer=setTimeout(run,1500);return;}
+    const ids=sbIds(),data=sbPayload();
+    const k=JSON.stringify([data.answers,data.name,data.studentId,data.section,data.email,data.code,data.minutes]);
+    if(!force&&k===sbLast)return;
+    sbBusy=true;
+    try{
+      const headers={"Content-Type":"application/json","apikey":SUPABASE.key};
+      if(/^eyJ/.test(SUPABASE.key))headers.Authorization="Bearer "+SUPABASE.key;
+      const res=await fetch(SUPABASE.url.trim().replace(/["']/g,"").replace(/\/+$/,"").replace(/\/rest\/v1$/,"")+"/rest/v1/rpc/submit_sim_progress",{method:"POST",headers,keepalive:!!keepalive,
+        body:JSON.stringify({p_record_id:ids.recordId,p_write_key:ids.writeKey,p_data:data})});
+      if(!res.ok){let t="";try{t=await res.text();}catch(_){}let msg=t;try{const j=JSON.parse(t);msg=[j.code,j.message,j.hint].filter(Boolean).join(" · ");}catch(_){}throw new Error("HTTP "+res.status+(msg?": "+msg.slice(0,300):""));}
+      sbLast=k;SB_STATE="ok";SB_ERR="";S.syncedAt=new Date().toISOString();save();
+    }catch(e){SB_STATE="error";SB_ERR=String(e&&e.message||e);if(/Failed to fetch|NetworkError|Load failed/i.test(SB_ERR))SB_ERR+=" (the browser couldn't reach "+SUPABASE.url+": check the URL, that the project isn't paused, and that your LMS allows connections to supabase.co)";console.warn("Supabase sync failed:",e);}
+    sbBusy=false;setSyncNote();
+  };
+  if(force)run();else sbTimer=setTimeout(run,2000);
+}
+async function syncRecord(force){
+  if(SB_ON){sbSync(force);return;}
+  if(!DB||!UID||!S.student||CAN_SUBMIT===false)return;
+  const r=buildSummary();if(S.completion)Object.assign(r,{completedAt:S.completion.completedAt,code:S.completion.code,status:"completed"});
+  const key=JSON.stringify([r.status,r.parts,r.name,r.studentId,r.section,r.email,r.code]);
+  if(!force&&key===lastSync)return;
+  try{await DB.collection("submissions").doc(UID).set({...r,updatedAt:new Date().toISOString(),userId:UID});lastSync=key;S.syncedAt=new Date().toISOString();save();setSyncNote();}
+  catch(e){if(e&&e.code==="invalid_argument"){CAN_SUBMIT=false;}setSyncNote(e);}
+}
+function setSyncNote(err){
+  const el=document.getElementById("syncNote");if(!el)return;
+  if(SB_ON){el.textContent=SB_STATE==="error"?"Couldn't save to the course database. Your progress is safe in this browser and will be sent next time you answer a question. Error: "+SB_ERR:S.syncedAt?"Progress saved to the course database · last sent "+fmtDate(S.syncedAt):"Your progress will be saved to the course database automatically.";return;}
+  if(!DB&&!SB_CONFIGURED&&!(window.claude&&window.claude.use)){el.textContent="Saved in this browser only (Supabase isn't configured in this copy of the page). Download your completion record when you finish.";return;}
+  if(!DB)el.textContent="Saved in this browser only. Download your completion record when you finish.";
+  else if(CAN_SUBMIT===false||err)el.textContent="Saved in this browser. Online submission isn't available with your access level; download your completion record and send it to your instructor.";
+  else el.textContent=S.syncedAt?"Progress submitted to your instructor · last sent "+fmtDate(S.syncedAt):"Your progress will be submitted to your instructor automatically.";
+}
+
+(async()=>{
+  try{
+    if(!window.claude||!window.claude.use){
+      if(SB_ON){
+        if(S.student)sbSync(true);
+        setInterval(()=>{if(document.visibilityState==="visible")sbSync(false);},300000);
+        addEventListener("pagehide",()=>sbSync(true,true));
+      }
+      return;
+    }
+    const [db,user,dl]=await Promise.all([window.claude.use("db"),window.claude.use("user"),window.claude.use("downloads")]);
+    DB=db;USER=user;DL=dl;
+    if(USER){
+      try{UID=await USER.id();}catch(e){}
+      try{IS_INSTR=(await USER.isOwner())||(await USER.canEdit());}catch(e){}
+      try{const c=await USER.can("data.write");if(c===false&&!IS_INSTR){/* submissions/{self} needs interact */CAN_SUBMIT=null;}}catch(e){}
+    }
+    renderNav();setSyncNote();
+    if(S.last==="record")renderRecord();
+    if(S.last==="instructor"&&IS_INSTR)renderInstructor();
+    syncRecord(true);
+  }catch(e){}
+})();
+
+function studentForm(after){
+  const st=S.student||{};
+  return `<div class="box outcomes" id="stuForm"><h3>${S.student?"Your details":"Before you start: your details"}</h3>
+  <p>${S.student?"These appear on your completion record.":"Enter your details once. They're used for your completion record and to show your instructor that you've completed the SIM."}</p>
+  <div class="formgrid">
+   <div class="fld"><label for="f-name">Full name</label><input id="f-name" autocomplete="name" value="${esc(st.name||"")}" ${S.completion?"disabled":""}></div>
+   <div class="fld"><label for="f-id">Student ID</label><input id="f-id" value="${esc(st.studentId||"")}" ${S.completion?"disabled":""}></div>
+   <div class="fld"><label for="f-sec">Course / section</label><input id="f-sec" placeholder="e.g. ECON 301, Section B" value="${esc(st.section||"")}" ${S.completion?"disabled":""}></div>
+   <div class="fld"><label for="f-mail">Email (optional)</label><input id="f-mail" type="email" autocomplete="email" value="${esc(st.email||"")}" ${S.completion?"disabled":""}></div>
+  </div>
+  ${S.completion?`<p class="sp-key">Details are locked because your completion record has been issued.</p>`:`<div class="qactions"><button class="btn" id="saveStu" data-after="${after||""}">${S.student?"Save details":"Save and continue"}</button></div><div class="fb" id="stuMsg"></div>`}
+  <p class="sp-key" id="syncNote"></p></div>`;
+}
+function wireStudentForm(){
+  const b=document.getElementById("saveStu");setSyncNote();if(!b)return;
+  b.addEventListener("click",()=>{
+    const v=id=>document.getElementById(id).value.trim();
+    const name=v("f-name"),sid=v("f-id"),sec=v("f-sec"),mail=v("f-mail");
+    const msg=document.getElementById("stuMsg");
+    if(!name||!sid||!sec){msg.className="fb show no";msg.textContent="Fill in your full name, student ID and course/section.";return;}
+    S.student={name,studentId:sid,section:sec,email:mail,registeredAt:(S.student&&S.student.registeredAt)||new Date().toISOString()};save();
+    syncRecord(true);
+    const after=b.dataset.after;
+    if(after)go(after);else{msg.className="fb show ok";msg.textContent="Saved.";renderNav();}
+  });
+}
+
+function renderRecord(){
+  const parts=PARTS();const done=allDone();
+  const pre=modStats(UNITS[0]),post=modStats(UNITS[UNITS.length-1]);
+  let h=`<div class="modhead"><div class="kicker">Student record</div><h1>Your completion record</h1></div>
+  ${studentForm("")}
+  <h2>Completion checklist</h2>
+  <p>To complete the SIM, answer every question in the pre-test, all five units and the post-test. Your record is issued once everything is done.</p>
+  <div class="tbl-wrap"><table><tr><th>Part</th><th>Answered</th><th>Correct</th><th>Time spent</th><th>Status</th></tr>
+  ${parts.map(({u,s})=>`<tr><td><button class="linkbtn" data-go="${u.id}">${u.short}${u.id.startsWith("u")?": "+u.title:""}</button></td><td class="num">${s.done}/${s.total}</td><td class="num">${s.correct}</td><td class="num">${Math.round(((S.time||{})[u.id]||0)/60)} min</td><td class="num" style="color:${s.done===s.total?"var(--good)":"var(--ink-2)"}">${s.done===s.total?"Done":"Not yet"}</td></tr>`).join("")}
+  <tr><th>Total</th><th class="num">${parts.reduce((a,p)=>a+p.s.done,0)}/${parts.reduce((a,p)=>a+p.s.total,0)}</th><th class="num">${parts.reduce((a,p)=>a+p.s.correct,0)}</th><th class="num">${fmtT((S.time||{}).total||0)}</th><th></th></tr></table></div>`;
+  if(!S.student){h+=`<p class="note">Enter your details above first.</p>`;}
+  else if(!done&&!S.completion){h+=`<p class="note">Your record will be available here once all parts are done.</p>`;}
+  else{
+    if(!S.completion){
+      const r=buildSummary();r.completedAt=new Date().toISOString();r.code=codeFor(r);
+      S.completion={completedAt:r.completedAt,code:r.code,snapshot:r};save();syncRecord(true);
+    }
+    const r=S.completion.snapshot;
+    h+=`<h2>Completion record</h2>
+    <div class="cert" id="cert">
+      <div class="cert-k">Certificate of completion · Self-Instructional Material</div>
+      <div class="cert-t">Qualitative Regression Models</div>
+      <p class="cert-p">This records that</p>
+      <div class="cert-n">${esc(r.name)}</div>
+      <p class="cert-p">Student ID ${esc(r.studentId)} · ${esc(r.section)}${r.email?" · "+esc(r.email):""}</p>
+      <p class="cert-p">completed the self-instructional material on the linear probability model, probit and logit regression.</p>
+      <div class="cert-grid">
+        <div><b>${r.prePct}%</b><span>Pre-test</span></div>
+        <div><b>${r.postPct}%</b><span>Post-test</span></div>
+        <div><b>${r.minutes} min</b><span>Study time</span></div>
+        <div><b style="font-size:15px;line-height:1.6">${UNITS.filter(u=>u.id.startsWith("u")).map(u=>pct({total:r.parts[u.id].total,correct:r.parts[u.id].correct})+"%").join(" / ")}</b><span>Units 1–5 self-check</span></div>
+      </div>
+      <p class="cert-p">Completed ${fmtDate(r.completedAt)}</p>
+      <div class="cert-code">Record code: <b>${r.code}</b></div>
+    </div>
+    <div class="qactions noprint"><button class="btn" id="dlRec">Download record</button><button class="btn ghost" id="prRec">Print or save as PDF</button></div>
+    <p class="sp-key noprint">Submit the downloaded record (or the PDF) to your instructor if they ask for it. The record code lets your instructor check that the details haven't been edited.</p>`;
+  }
+  main.innerHTML=h;
+  main.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.go)));
+  wireStudentForm();
+  const d=document.getElementById("dlRec");if(d)d.addEventListener("click",downloadRecord);
+  const p=document.getElementById("prRec");if(p)p.addEventListener("click",()=>{document.body.classList.add("print-cert");try{window.print();}catch(e){}setTimeout(()=>document.body.classList.remove("print-cert"),500);});
+}
+function recordHTML(r){
+  const rows=UNITS.map(u=>{const p=r.parts[u.id];return `<tr><td>${u.short}${u.id.startsWith("u")?": "+u.title:""}</td><td>${p.answered}/${p.total}</td><td>${p.correct}</td><td>${p.minutes} min</td></tr>`;}).join("");
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Completion record - ${esc(r.name)}</title><style>body{font-family:Georgia,serif;max-width:720px;margin:40px auto;padding:0 20px;color:#1D2B3A}h1{font-size:26px}table{border-collapse:collapse;width:100%;font-family:Arial,sans-serif;font-size:14px}td,th{border:1px solid #ccc;padding:6px 8px;text-align:left}.code{font-family:monospace;font-size:18px}</style></head><body>
+<h1>Completion record: Qualitative Regression Models (SIM)</h1>
+<table><tr><th>Name</th><td>${esc(r.name)}</td></tr><tr><th>Student ID</th><td>${esc(r.studentId)}</td></tr><tr><th>Course / section</th><td>${esc(r.section)}</td></tr><tr><th>Email</th><td>${esc(r.email||"")}</td></tr><tr><th>Started</th><td>${fmtDate(r.registeredAt)}</td></tr><tr><th>Completed</th><td>${fmtDate(r.completedAt)}</td></tr><tr><th>Study time</th><td>${r.minutes} min</td></tr><tr><th>Pre-test</th><td>${r.prePct}%</td></tr><tr><th>Post-test</th><td>${r.postPct}%</td></tr><tr><th>Record code</th><td class="code">${r.code}</td></tr></table>
+<h2>Detail by part</h2><table><tr><th>Part</th><th>Answered</th><th>Correct</th><th>Time</th></tr>${rows}</table>
+<p style="font-size:12px;color:#666">Data: ${esc(JSON.stringify({name:r.name,studentId:r.studentId,section:r.section,completedAt:r.completedAt,prePct:r.prePct,postPct:r.postPct,minutes:r.minutes,code:r.code}))}</p>
+</body></html>`;
+}
+async function downloadRecord(){
+  const r=S.completion.snapshot;
+  const fname=("SIM-record-"+(r.studentId||"student")+".html").replace(/[^\w.-]+/g,"_");
+  const html=recordHTML(r);
+  if(DL){try{await DL.save({filename:fname,data:new Blob([html],{type:"text/html"})});}catch(e){}return;}
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));a.download=fname;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+}
+
+/* instructor view */
+function renderInstructor(){
+  if(!IS_INSTR){main.innerHTML=`<h1>Instructor records</h1><p>Only the owner or editors of this page can see submitted records.</p>`;return;}
+  main.innerHTML=`<div class="modhead"><div class="kicker">Instructor</div><h1>Student records</h1></div>
+  <p>Students who open this page signed in to claude.ai with Contributor access appear here automatically as they work. Students using a downloaded copy send you their record file instead; check the record code in the verifier below.</p>
+  <div class="qactions"><button class="btn" id="csvBtn">Download CSV</button></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Name</th><th>Student ID</th><th>Section</th><th>Status</th><th>Pre</th><th>Post</th><th>Time</th><th>Code</th><th>Last update</th></tr></thead><tbody id="subRows"><tr><td colspan="9">Loading…</td></tr></tbody></table></div>
+  <h2>Verify a record code</h2>
+  <p>Enter the details exactly as they appear on a student's downloaded record.</p>
+  <div class="formgrid">
+   <div class="fld"><label for="v-name">Full name</label><input id="v-name"></div>
+   <div class="fld"><label for="v-id">Student ID</label><input id="v-id"></div>
+   <div class="fld"><label for="v-sec">Course / section</label><input id="v-sec"></div>
+   <div class="fld"><label for="v-pre">Pre-test %</label><input id="v-pre" inputmode="numeric"></div>
+   <div class="fld"><label for="v-post">Post-test %</label><input id="v-post" inputmode="numeric"></div>
+   <div class="fld"><label for="v-min">Study time (min)</label><input id="v-min" inputmode="numeric"></div>
+   <div class="fld"><label for="v-at">Completed timestamp (from the "Data" line)</label><input id="v-at" placeholder="2026-10-09T10:15:00.000Z"></div>
+   <div class="fld"><label for="v-code">Record code</label><input id="v-code" placeholder="QRM-XXXXXXX"></div>
+  </div>
+  <div class="qactions"><button class="btn" id="vBtn">Check code</button></div><div class="fb" id="vMsg"></div>`;
+  const tb=document.getElementById("subRows");
+  const draw=()=>{
+    if(!SUBS){return;}
+    if(!SUBS.length){tb.innerHTML=`<tr><td colspan="9">No submissions yet. Share this page with students at Contributor access.</td></tr>`;return;}
+    tb.innerHTML=SUBS.map(r=>`<tr><td>${esc(String(r.name||""))}</td><td>${esc(String(r.studentId||""))}</td><td>${esc(String(r.section||""))}</td><td>${esc(String(r.status||""))}</td><td class="num">${r.prePct??""}%</td><td class="num">${r.postPct??""}%</td><td class="num">${r.minutes??""} min</td><td class="num">${esc(String(r.code||""))}</td><td>${r.updatedAt?fmtDate(r.updatedAt):""}</td></tr>`).join("");
+  };
+  if(!DB){tb.innerHTML=`<tr><td colspan="9">Online records are only available when this page is opened on claude.ai.</td></tr>`;}
+  else if(!subUnsub){
+    subUnsub=DB.collection("submissions").onSnapshot(snap=>{SUBS=snap.docs.map(d=>d.data()||{}).sort((a,b)=>String(a.name).localeCompare(String(b.name)));if(S.last==="instructor")draw();},
+      err=>{tb.innerHTML=`<tr><td colspan="9">Couldn't load records (${esc(err&&err.code||"error")}).</td></tr>`;});
+  }else draw();
+  document.getElementById("csvBtn").addEventListener("click",async()=>{
+    const rows=[["name","student_id","section","email","status","pre_pct","post_pct","minutes","code","registered_at","completed_at","updated_at"]];
+    (SUBS||[]).forEach(r=>rows.push([r.name,r.studentId,r.section,r.email,r.status,r.prePct,r.postPct,r.minutes,r.code,r.registeredAt,r.completedAt,r.updatedAt]));
+    const csv=rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\n");
+    if(DL){try{await DL.save({filename:"sim-student-records.csv",data:csv});}catch(e){}}
+    else{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="sim-student-records.csv";a.click();}
+  });
+  document.getElementById("vBtn").addEventListener("click",()=>{
+    const v=id=>document.getElementById(id).value.trim();
+    const r={name:v("v-name"),studentId:v("v-id"),section:v("v-sec"),completedAt:v("v-at"),prePct:v("v-pre"),postPct:v("v-post"),minutes:v("v-min")};
+    const ok=codeFor(r)===v("v-code").toUpperCase();
+    const m=document.getElementById("vMsg");m.className="fb show "+(ok?"ok":"no");
+    m.textContent=ok?"The code matches these details.":"The code does not match. The details may have been edited, or a field was typed differently.";
+  });
+}
+
+/* ---------- misc ---------- */
+document.getElementById("glossBody").innerHTML=GLOSS;
+document.getElementById("menuBtn").addEventListener("click",e=>{const o=side.classList.toggle("open");e.currentTarget.setAttribute("aria-expanded",o);});
+document.getElementById("themeBtn").addEventListener("click",()=>{
+  const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme=dark?"light":"dark";S.theme=r.dataset.theme;save();if(S.last==="home")drawHero();
+});
+if(S.theme)document.documentElement.dataset.theme=S.theme;
+document.getElementById("resetBtn").addEventListener("click",()=>{if(confirm("Clear all answers, notes, your details and any completion record in this browser?")){S={answers:{},notes:{},open:{},last:"home",theme:S.theme,time:{}};save();go("home");}});
+
+go(S.last==="print"||UNITS.some(m=>m.id===S.last)?S.last:"home");
+</script>
+</body>
+</html>
